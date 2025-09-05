@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
@@ -23,8 +23,11 @@ export class AuthService {
 
 		if(user && isMatch){
 			return user;
+		} else if(!isMatch){
+			throw new BadRequestException('Contraseña incorrecta');
+		} else {
+			return null;
 		}
-		return null;
 	}
 
 	generateJwt(user: User){
