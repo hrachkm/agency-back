@@ -135,7 +135,7 @@ describe('UsersService', () => {
     expect(result).toHaveProperty('removed', true);
     expect(result).toHaveProperty('user', mockDeletedUser);
     expect(userRepo.query).toHaveBeenCalledWith(
-      `DELETE FROM "user" WHERE id = $1 RETURNING *`,
+      `DELETE FROM \"user\" WHERE id = $1 RETURNING id, email, role, \"createdAt\", \"updatedAt\"`,
       [3]
     );
   });
