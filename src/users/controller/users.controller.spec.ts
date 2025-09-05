@@ -3,6 +3,7 @@ import { UsersController } from './users.controller';
 import { UsersService } from '@/users/services/users.service';
 import { CreateUserDto, RegisteredUserDto } from '@/users/dto/user.dto';
 import { User } from '@/users/entities/user.entity';
+import { BadRequestException } from '@nestjs/common';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -90,5 +91,15 @@ describe('UsersController', () => {
       expect(result).toBe(`This action removes a #1 user`);
       expect(usersService.remove).toHaveBeenCalledWith(1);
     });
+
+    it('should throw BadRequestException if user does not exist', async () => {
+      jest
+        .spyOn(usersService, 'remove')
+        .mockRejectedValueOnce(new BadRequestException('No se encontró el usuario con id 999'));
+
+      await expect(controller.remove('999')).rejects.toThrow(BadRequestException);
+      expect(usersService.remove).toHaveBeenCalledWith(999);
+    });
+
   });
 });

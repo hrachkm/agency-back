@@ -5,9 +5,24 @@ import { User } from '@/users/entities/user.entity';
 import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
+interface UserFormat {
+  id: number;
+  email: string;
+  password: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface UserCreated {
+  created: Boolean,
+  user: UserFormat
+}
+
 describe('UsersService', () => {
   let service: UsersService;
   let userRepo: any;
+  let userCreated: UserCreated;
 
   const mockUsers = [
     { id: 1, email: 'admin@example.com', password: 'hashed', role: 'admin' },
@@ -82,8 +97,8 @@ describe('UsersService', () => {
       userRepo.create.mockReturnValue(createdUser);
       userRepo.save.mockResolvedValue(createdUser);
 
-      const result = await service.create(newUser);
-      expect(result).toEqual({ created: true, user: createdUser });
+      userCreated = await service.create(newUser);
+      expect(userCreated).toEqual({ created: true, user: createdUser });
     });
 
     it('should throw if user already exists', async () => {
@@ -102,6 +117,35 @@ describe('UsersService', () => {
         .rejects.toThrow(BadRequestException);
     });
   });
+
+  it('should remove a user and return the user object', async () => {
+    const mockDeletedUser = {
+      id: 3,
+      email: 'deleted@example.com',
+      password: 'hashed',
+      role: 'user',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Simula el resultado de query: [[user], affectedRows]
+    userRepo.query.mockResolvedValue([[mockDeletedUser], 1]);
+
+    const result = await service.remove(3);
+    expect(result).toHaveProperty('removed', true);
+    expect(result).toHaveProperty('user', mockDeletedUser);
+    expect(userRepo.query).toHaveBeenCalledWith(
+      `DELETE FROM "user" WHERE id = $1 RETURNING *`,
+      [3]
+    );
+  });
+
+  it('should throw BadRequestException if user does not exist', async () => {
+    userRepo.query.mockResolvedValue([[], 0]);
+
+    await expect(service.remove(999)).rejects.toThrow(BadRequestException);
+  });
+
 
   describe('removeAll', () => {
     it('should clear users and reset sequence', async () => {

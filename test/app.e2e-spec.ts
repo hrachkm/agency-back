@@ -3,8 +3,18 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 
+interface UserFormat {
+  id: number;
+  email: string;
+  password: string;
+  role: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 describe('App E2E', () => {
   let app: INestApplication;
+  let createdUser: UserFormat;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -59,21 +69,53 @@ describe('App E2E', () => {
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty('created', true);
     expect(res.body.user).toHaveProperty('email', newUser.email);
-  }, 20000);
 
+    // Guardamos el ID para eliminarlo después
+    createdUser = res.body.user;
+    expect(createdUser.email).toBe(newUser.email);
+
+
+  }, 20000);
 
   it('POST /auth/login should return JWT token', async () => {
     const credentials = {
-      email: 'e2euser@example.com',
+      email: createdUser.email,
       password: 'e2epass123',
     };
 
     const res = await request(app.getHttpServer())
       .post('/auth/login')
       .send(credentials);
-    
+
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty('token');
     expect(res.body.user).toHaveProperty('email', credentials.email);
   }, 10000);
+
+  it('DELETE /users/:id should remove the user', async () => {
+    const res = await request(app.getHttpServer())
+      .delete(`/users/${createdUser.id}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('removed', true);
+  }, 10000);
+
+  it('DELETE /users/:id should fail for non-existent user', async () => {
+    const nonExistentUserId = 999999;
+
+    const res = await request(app.getHttpServer())
+      .delete(`/users/${nonExistentUserId}`);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toHaveProperty('message', `No se encontró el usuario con id ${nonExistentUserId}`);
+  });
+
+  it('DELETE /users/:id should fail with invalid id format', async () => {
+    const res = await request(app.getHttpServer())
+      .delete('/users/not-a-number');
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.message).toContain('Validation failed');
+  });
+
 });
