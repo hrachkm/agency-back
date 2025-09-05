@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 
 import { UsersService } from '../../users/services/users.service';
 import { User } from '../../users/entities/user.entity';
+import { BadRequestException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -52,19 +53,23 @@ describe('AuthService', () => {
       expect(result).toEqual(mockUser);
     });
 
-    it('should return null if user is not found', async () => {
-      jest.spyOn(usersService, 'findOne').mockResolvedValue(null);
+    it('should throw BadRequestException if user is not found', async () => {
+      jest
+        .spyOn(usersService, 'findOne')
+        .mockRejectedValue(new BadRequestException('Usuario no registrado'));
 
-      const result = await authService.validateUser('wrong@example.com', 'password');
-      expect(result).toBeNull();
+      await expect(
+        authService.validateUser('wrong@example.com', 'password')
+      ).rejects.toThrow(BadRequestException);
     });
 
-    it('should return null if password does not match', async () => {
+    it('should throw BadRequestException if password does not match', async () => {
       jest.spyOn(usersService, 'findOne').mockResolvedValue(mockUser);
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(false);
 
-      const result = await authService.validateUser('test@example.com', 'wrongpassword');
-      expect(result).toBeNull();
+      await expect(
+        authService.validateUser('test@example.com', 'wrongpassword')
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
