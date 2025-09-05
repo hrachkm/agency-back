@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from '../service/auth.service';
@@ -27,6 +28,7 @@ describe('AuthController', () => {
           provide: AuthService,
           useValue: {
             generateJwt: jest.fn().mockReturnValue(mockTokenResponse),
+            validateToken: jest.fn(),
           },
         },
       ],
@@ -51,4 +53,43 @@ describe('AuthController', () => {
       expect(authService.generateJwt).toHaveBeenCalledWith(mockUser);
     });
   });
+
+  describe('validate', () => {
+    it('should return validated user from AuthService', async () => {
+      const validatedUser = {
+        id: 1,
+        email: 'test@example.com',
+        password: 'test123',
+        role: 'admin',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Simula el método validateToken
+      jest.spyOn(authService, 'validateToken').mockResolvedValue(validatedUser);
+
+      const mockRequest = {
+        user: mockUser,
+      } as any;
+
+      const result = await controller.validate(mockRequest);
+      expect(result).toEqual(validatedUser);
+      expect(authService.validateToken).toHaveBeenCalledWith(mockUser);
+    });
+
+    it('should throw BadRequestException if user not found', async () => {
+      jest
+        .spyOn(authService, 'validateToken')
+        .mockRejectedValue(new BadRequestException('Usuario no registrado'));
+
+      const mockRequest = {
+        user: { email: 'notfound@example.com' },
+      } as any;
+
+      await expect(controller.validate(mockRequest)).rejects.toThrow(BadRequestException);
+      await expect(controller.validate(mockRequest)).rejects.toThrow('Usuario no registrado');
+    });
+
+  });
+
 });

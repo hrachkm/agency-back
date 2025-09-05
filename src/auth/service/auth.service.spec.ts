@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
+import { BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
+import { AuthService } from './auth.service';
 import { UsersService } from '../../users/services/users.service';
 import { User } from '../../users/entities/user.entity';
-import { BadRequestException } from '@nestjs/common';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -85,4 +85,41 @@ describe('AuthService', () => {
       });
     });
   });
+
+  describe('validate user token', () => {
+    it('should return validated user if token is valid', async () => {
+      const mockUser = {
+        id: 1,
+        email: 'test@example.com',
+        password: 'hashedPassword',
+        role: 'admin',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as User;
+
+      jest.spyOn(usersService, 'findOne').mockResolvedValue({ ...mockUser });
+
+      const result = await authService.validateToken(mockUser);
+
+      expect(result).toEqual({
+        id: mockUser.id,
+        email: mockUser.email,
+        role: mockUser.role,
+        createdAt: mockUser.createdAt,
+        updatedAt: mockUser.updatedAt,
+      });
+
+      expect(result).not.toHaveProperty('password');
+    });
+
+    it('should throw BadRequestException if user is not found during token validation', async () => {
+      jest
+        .spyOn(usersService, 'findOne')
+        .mockRejectedValue(new BadRequestException('Usuario no registrado'));
+
+      await expect(authService.validateToken({ email: 'notfound@example.com' } as User))
+        .rejects
+        .toThrow(BadRequestException);
+    });
+  })
 });
