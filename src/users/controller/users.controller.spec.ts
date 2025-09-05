@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UsersService } from '@/users/services/users.service';
 import { CreateUserDto, RegisteredUserDto } from '@/users/dto/user.dto';
 import { User } from '@/users/entities/user.entity';
-import { BadRequestException } from '@nestjs/common';
 
 describe('UsersController', () => {
   let controller: UsersController;
