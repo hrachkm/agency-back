@@ -13,29 +13,29 @@ export class UsersService {
   constructor(
     @Inject('PG') private clientPg: Client,
     @InjectRepository(User) private userRepo: Repository<User>
-  ) {}
+  ) { }
 
   async findAll() {
 
     const users = await this.userRepo.find({});
 
-    if(!users || (users.length === 0)) throw new BadRequestException('No hay usuarios registrados');
+    if (!users || (users.length === 0)) throw new BadRequestException('No hay usuarios registrados');
 
     return users;
   }
 
   async findOne(email: string) {
-    const user = await this.userRepo.findOne({ where: {email}});
+    const user = await this.userRepo.findOne({ where: { email } });
 
-    if(!user) throw new BadRequestException('No hay usuarios registrados');
+    if (!user) throw new BadRequestException('No hay usuarios registrados');
 
     return user;
   }
 
   async create(newUser: CreateUserDto) {
     const { email } = newUser;
-    const isRegistered = await this.userRepo.findOne({ where: { email }});
-    if(!!isRegistered) throw new BadRequestException('Este usuario ya está registrado');
+    const isRegistered = await this.userRepo.findOne({ where: { email } });
+    if (!!isRegistered) throw new BadRequestException('Este usuario ya está registrado');
 
     const hashPassword = await bcrypt.hash(newUser.password, 17);
     newUser.password = hashPassword;
@@ -43,7 +43,7 @@ export class UsersService {
     const created = await this.userRepo.create(newUser);
     const userAdded = await this.userRepo.save(created);
 
-    if(!userAdded) throw new BadRequestException('No se pudo registrar el usuario', {
+    if (!userAdded) throw new BadRequestException('No se pudo registrar el usuario', {
       cause: new Error(),
       description: 'Add user error'
     })
@@ -58,8 +58,23 @@ export class UsersService {
     return `This action updates a #${id} user`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: number) {
+    const result = await this.userRepo.query(
+      `DELETE FROM "user" WHERE id = $1 RETURNING *`,
+      [id]
+    );
+
+    const deletedUser = result[0]?.[0];
+
+    if (!deletedUser) {
+      throw new BadRequestException(`No se encontró el usuario con id ${id}`);
+    }
+
+    return {
+      removed: true,
+      user: deletedUser,
+    };
+
   }
 
   async removeAll() {
@@ -72,6 +87,6 @@ export class UsersService {
     } catch (error) {
       return false;
     }
-    
+
   }
 }
