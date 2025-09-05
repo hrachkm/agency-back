@@ -27,7 +27,7 @@ export class UsersService {
   async findOne(email: string) {
     const user = await this.userRepo.findOne({ where: { email } });
 
-    if (!user) throw new BadRequestException('No hay usuarios registrados');
+    if (!user) throw new BadRequestException('Usuario no registrado');
 
     return user;
   }
