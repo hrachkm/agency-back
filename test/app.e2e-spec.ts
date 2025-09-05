@@ -6,7 +6,7 @@ import { AppModule } from './../src/app.module';
 interface UserFormat {
   id: number;
   email: string;
-  password: string;
+  password?: string;
   role: string;
   createdAt: string;
   updatedAt: string;
@@ -15,6 +15,7 @@ interface UserFormat {
 describe('App E2E', () => {
   let app: INestApplication;
   let createdUser: UserFormat;
+  let authToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -48,11 +49,6 @@ describe('App E2E', () => {
       .get('/database')
       .expect(200)
       .expect('Conexión a la base de datos exitosa. ✅');
-  });
-
-  it('GET /users should return list of users or 400 if empty', async () => {
-    const res = await request(app.getHttpServer()).get('/users');
-    expect([200, 400]).toContain(res.statusCode);
   });
 
   it('POST /users should create a new user', async () => {
@@ -90,11 +86,23 @@ describe('App E2E', () => {
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty('token');
     expect(res.body.user).toHaveProperty('email', credentials.email);
+
+    authToken = res.body.token;
   }, 10000);
+
+  it('GET /users should return list of users or 400 if empty', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/users')
+      .set('Authorization', `Bearer ${authToken}`);
+    
+    expect([200, 400]).toContain(res.statusCode);
+  });
 
   it('DELETE /users/:id should remove the user', async () => {
     const res = await request(app.getHttpServer())
-      .delete(`/users/${createdUser.id}`);
+      .delete(`/users/${createdUser.id}`)
+      .set('Authorization', `Bearer ${authToken}`);
+
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('removed', true);
@@ -104,7 +112,9 @@ describe('App E2E', () => {
     const nonExistentUserId = 999999;
 
     const res = await request(app.getHttpServer())
-      .delete(`/users/${nonExistentUserId}`);
+      .delete(`/users/${nonExistentUserId}`)
+      .set('Authorization', `Bearer ${authToken}`);
+
 
     expect(res.statusCode).toBe(400);
     expect(res.body).toHaveProperty('message', `No se encontró el usuario con id ${nonExistentUserId}`);
@@ -112,7 +122,9 @@ describe('App E2E', () => {
 
   it('DELETE /users/:id should fail with invalid id format', async () => {
     const res = await request(app.getHttpServer())
-      .delete('/users/not-a-number');
+      .delete('/users/not-a-number')
+      .set('Authorization', `Bearer ${authToken}`);
+
 
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toContain('Validation failed');
