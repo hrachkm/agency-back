@@ -1,7 +1,8 @@
-import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 
+import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { AuthService } from '../service/auth.service';
 import { User } from '@/users/entities/user.entity';
 
@@ -14,4 +15,11 @@ export class AuthController {
   login(@Req() req: Request){
     return this.authService.generateJwt(req.user as User);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('validate')
+  validate(@Req() req: Request) {
+    return this.authService.validateToken(req.user as User);
+  }
+
 }

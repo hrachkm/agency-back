@@ -14,26 +14,26 @@ export class AuthService {
 	constructor(
 		private usersService: UsersService,
 		private jwtService: JwtService
-	){}
+	) { }
 
 	async validateUser(email: string, password: string) {
 
 		const user = await this.usersService.findOne(email);
 		const isMatch = await user ? await bcrypt.compare(password, user.password) : false
 
-		if(user && isMatch){
+		if (user && isMatch) {
 			return user;
-		} else if(!isMatch){
+		} else if (!isMatch) {
 			throw new BadRequestException('Contraseña incorrecta');
 		} else {
 			return null;
 		}
 	}
 
-	generateJwt(user: User){
+	generateJwt(user: User) {
 		const payload: PayloadToken = {
 			role: user.role,
-			sub: user.id
+			email: user.email,
 		}
 
 		return {
@@ -41,4 +41,11 @@ export class AuthService {
 			user
 		}
 	}
+
+	async validateToken(user: User) {
+		const validatedUser = await this.usersService.findOne(user.email);
+		delete validatedUser.password;
+		return validatedUser;
+	}
+
 }
