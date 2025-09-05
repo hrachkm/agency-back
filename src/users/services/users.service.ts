@@ -60,9 +60,10 @@ export class UsersService {
 
   async remove(id: number) {
     const result = await this.userRepo.query(
-      `DELETE FROM "user" WHERE id = $1 RETURNING *`,
+      `DELETE FROM "user" WHERE id = $1 RETURNING id, email, role, "createdAt", "updatedAt"`,
       [id]
     );
+
 
     const deletedUser = result[0]?.[0];
 
