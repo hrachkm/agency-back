@@ -43,16 +43,25 @@ describe('AuthController', () => {
   });
 
   describe('login', () => {
-    it('should return token and user from AuthService', () => {
-      const mockRequest = {
-        user: mockUser,
-      } as any;
+    it('should set cookie and return token and user', async() => {
+      const mockRequest = { user: mockUser } as any;
 
-      const result = controller.login(mockRequest);
-      expect(result).toEqual(mockTokenResponse);
+      const mockCookie = jest.fn();
+      const mockResponse = { cookie: mockCookie } as any;
+
+      const result = await controller.login(mockRequest, mockResponse);
+
       expect(authService.generateJwt).toHaveBeenCalledWith(mockUser);
+      expect(mockCookie).toHaveBeenCalledWith('auth_token', mockTokenResponse.token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24, // 1 día
+      });
+      expect(result).toEqual({ user: mockUser });
     });
   });
+
 
   describe('validate', () => {
     it('should return validated user from AuthService', async () => {
@@ -90,6 +99,21 @@ describe('AuthController', () => {
       await expect(controller.validate(mockRequest)).rejects.toThrow('Usuario no registrado');
     });
 
+  });
+
+  describe('logout', () => {
+    it('should clear auth_token cookie and return message', () => {
+      const mockClearCookie = jest.fn();
+      const mockResponse = { clearCookie: mockClearCookie } as any;
+
+      const result = controller.logout(mockResponse);
+      expect(mockClearCookie).toHaveBeenCalledWith('auth_token', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+      });
+      expect(result).toEqual({ message: 'Sesión cerrada correctamente' });
+    });
   });
 
 });

@@ -1,9 +1,16 @@
 import { registerAs } from '@nestjs/config';
 
+
 export default registerAs('config', () => {
+
+	const environment = process.env.NODE_ENV || 'development';
+	const rawOrigins = process.env.ALLOWED_ORIGINS || '';
+
 	return {
 		server: {
-			port: parseInt(process.env.PORT) || 3100
+			port: parseInt(process.env.PORT) || 3100,
+			environment,
+			allowedOrigins: rawOrigins.split(',').map(origin => origin.trim())
 		},
 		database: {
 			type: process.env.DATABASE_TYPE,
@@ -19,4 +26,4 @@ export default registerAs('config', () => {
 		apiKey: process.env.API_KEY,
 		jwtSecret: process.env.JWT_SECRET,
 	}
-})
+});

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
+import * as cookieParser from 'cookie-parser';
 import { AppModule } from '@/app.module';
 
 interface UserFormat {
@@ -15,7 +16,7 @@ interface UserFormat {
 describe('App E2E', () => {
   let app: INestApplication;
   let createdUser: UserFormat;
-  let authToken: string;
+  let authCookie: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -23,6 +24,7 @@ describe('App E2E', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(cookieParser());
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
   });
@@ -72,10 +74,9 @@ describe('App E2E', () => {
       createdUser = res.body.user;
       expect(createdUser.email).toBe(newUser.email);
 
-
     }, 20000);
 
-    it('POST /auth/login should return JWT token', async () => {
+    it('POST /auth/login should return cookie with token', async () => {
       const credentials = {
         email: createdUser.email,
         password: 'e2epass123',
@@ -86,16 +87,18 @@ describe('App E2E', () => {
         .send(credentials);
 
       expect(res.statusCode).toBe(201);
-      expect(res.body).toHaveProperty('token');
       expect(res.body.user).toHaveProperty('email', credentials.email);
 
-      authToken = res.body.token;
+      // Captura la cookie
+      const rawCookie = res.headers['set-cookie'];
+      expect(rawCookie).toBeDefined();
+      authCookie = rawCookie[0].split(';')[0]; // auth_token=...
     }, 10000);
 
     it('GET /users should return list of users or 400 if empty', async () => {
       const res = await request(app.getHttpServer())
         .get('/users')
-        .set('Authorization', `Bearer ${authToken}`);
+        .set('Cookie', authCookie);
 
       expect([200, 400]).toContain(res.statusCode);
     });
@@ -103,7 +106,7 @@ describe('App E2E', () => {
     it('DELETE /users/:id should remove the user', async () => {
       const res = await request(app.getHttpServer())
         .delete(`/users/${createdUser.id}`)
-        .set('Authorization', `Bearer ${authToken}`);
+        .set('Cookie', authCookie);
 
 
       expect(res.statusCode).toBe(200);
@@ -115,8 +118,7 @@ describe('App E2E', () => {
 
       const res = await request(app.getHttpServer())
         .delete(`/users/${nonExistentUserId}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
+        .set('Cookie', authCookie);
 
       expect(res.statusCode).toBe(400);
       expect(res.body).toHaveProperty('message', `No se encontró el usuario con id ${nonExistentUserId}`);
@@ -125,8 +127,7 @@ describe('App E2E', () => {
     it('DELETE /users/:id should fail with invalid id format', async () => {
       const res = await request(app.getHttpServer())
         .delete('/users/not-a-number')
-        .set('Authorization', `Bearer ${authToken}`);
-
+        .set('Cookie', authCookie);
 
       expect(res.statusCode).toBe(400);
       expect(res.body.message).toContain('Validation failed');
@@ -135,7 +136,6 @@ describe('App E2E', () => {
 
   describe('should validate token after login and handle failure', () => {
     let validatedUser: UserFormat;
-    let token: string;
 
     it('POST /users should create a new user for token validation', async () => {
       const newUser = {
@@ -153,7 +153,7 @@ describe('App E2E', () => {
       expect(validatedUser.email).toBe(newUser.email);
     }, 10000);
 
-    it('POST /auth/login should return token for validation', async () => {
+    it('POST /auth/login should return cookie with token', async () => {
       const credentials = {
         email: validatedUser.email,
         password: 'validate123',
@@ -164,16 +164,18 @@ describe('App E2E', () => {
         .send(credentials);
 
       expect(res.statusCode).toBe(201);
-      expect(res.body).toHaveProperty('token');
-      expect(res.body.user.email).toBe(validatedUser.email);
+      expect(res.body.user).toHaveProperty('email', credentials.email);
 
-      token = res.body.token;
+      // Captura la cookie
+      const rawCookie = res.headers['set-cookie'];
+      expect(rawCookie).toBeDefined();
+      authCookie = rawCookie[0].split(';')[0]; // auth_token=...
     }, 10000);
 
     it('GET /auth/validate should return validated user', async () => {
       const res = await request(app.getHttpServer())
         .get('/auth/validate')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Cookie', authCookie);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('email', validatedUser.email);
@@ -183,7 +185,7 @@ describe('App E2E', () => {
     it('GET /auth/validate should fail with invalid token', async () => {
       const res = await request(app.getHttpServer())
         .get('/auth/validate')
-        .set('Authorization', 'Bearer invalid.token.here');
+        .set('Cookie', 'invalid.token.here');
 
       expect(res.statusCode).toBe(401);
       expect(res.body.message).toContain('Unauthorized');
@@ -192,7 +194,7 @@ describe('App E2E', () => {
     it('DELETE /users/:id should remove the validated user', async () => {
       const res = await request(app.getHttpServer())
         .delete(`/users/${validatedUser.id}`)
-        .set('Authorization', `Bearer ${token}`);
+        .set('Cookie', authCookie);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('removed', true);
