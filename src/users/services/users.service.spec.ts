@@ -44,7 +44,7 @@ describe('UsersService', () => {
         UsersService,
         {
           provide: 'PG',
-          useValue: {}, // Puedes mockear métodos si usas clientPg directamente
+          useValue: {},
         },
         {
           provide: getRepositoryToken(User),

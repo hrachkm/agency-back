@@ -17,8 +17,6 @@ const {
   DATABASE_MIGRATIONS,
 } = process.env;
 
-//TODO: Implementar migraciones
-
 export const AppDataSource = new DataSource({
   type: (DATABASE_TYPE as 'postgres'),
   host: DATABASE_HOST,
