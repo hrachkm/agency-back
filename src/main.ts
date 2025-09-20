@@ -5,7 +5,7 @@ import { AppModule } from './app.module';
 
 import config from './config';
 
-const { port, environment, allowedOrigins } = config().server;
+const { port, allowedOrigins } = config().server;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
