@@ -19,7 +19,7 @@ import { SeedModule } from './seed/seed.module';
       isGlobal: true,
       validationSchema: Joi.object({
         API_KEY: Joi.string().required(),
-        JWT_SECRET: Joi.string().required(),
+        JWT_ACCESS_SECRET: Joi.string().required(),
       })
     }),
     DatabaseModule,

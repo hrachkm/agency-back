@@ -24,6 +24,7 @@ export default registerAs('config', () => {
 			migrations: process.env.DATABASE_MIGRATIONS
 		},
 		apiKey: process.env.API_KEY,
-		jwtSecret: process.env.JWT_SECRET,
+		jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
+		jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
 	}
 });

@@ -1,11 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { User } from '@/users/entities/user.entity';
 import { UsersService } from '@/users/services/users.service';
 import { PayloadToken } from '@/auth/models/token.model';
-
 
 @Injectable()
 export class AuthService {
@@ -18,27 +17,49 @@ export class AuthService {
 	async validateUser(email: string, password: string) {
 
 		const user = await this.usersService.findOne(email);
-		const isMatch = await user ? await bcrypt.compare(password, user.password) : false
 
-		if (user && isMatch) {
-			return user;
-		} else if (!isMatch) {
-			throw new BadRequestException('Contraseña incorrecta');
-		} else {
+		if(!user){
 			return null;
 		}
+
+		const isMatch = await user ? await bcrypt.compare(password, user.password) : false
+		if (!isMatch) {
+			throw new BadRequestException('Contraseña incorrecta');
+		}
+
+		return user;
 	}
 
-	generateJwt(user: User) {
+	generateTokens(user: User) {
 		const payload: PayloadToken = {
 			role: user.role,
 			email: user.email,
+		};
+
+		const accessToken = this.jwtService.sign(payload);
+
+		const refreshToken = this.jwtService.sign(payload, {
+			secret: process.env.JWT_REFRESH_SECRET,
+			expiresIn: '7d',
+		});
+
+		return { accessToken, refreshToken };
+	}
+
+	async verifyRefreshToken(token) {
+		let payload: PayloadToken;
+		try {
+			payload = this.jwtService.verify(token, {
+				secret: process.env.JWT_REFRESH_SECRET,
+			});
+		} catch (err) {
+			throw new UnauthorizedException('Refresh token inválido o expirado');
 		}
 
-		return {
-			token: this.jwtService.sign(payload),
-			user
-		}
+		const user = await this.usersService.findOne(payload.email);
+		const { accessToken, refreshToken } = this.generateTokens(user);
+
+		return { accessToken, refreshToken };
 	}
 
 	async validateToken(user: User) {

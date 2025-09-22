@@ -8,21 +8,52 @@ import { User } from '@/users/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
-  constructor( private authService: AuthService ){}
+  constructor(private authService: AuthService) { }
 
-  @UseGuards(AuthGuard('local'))
   @Post('login')
+  @UseGuards(AuthGuard('local'))
   async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as User;
-    const token = this.authService.generateJwt(user);
+    const { accessToken, refreshToken } = this.authService.generateTokens(user);
 
-    res.cookie('auth_token', token.token, {
+    res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: 'strict',
-      maxAge: 1000 * 60 * 60 * 24, // 1 día
+      maxAge: 15 * 60 * 1000,
     });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     return { user };
+  }
+
+  @Get('refresh')
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const token = req.cookies?.refresh_token;
+
+    const { accessToken, refreshToken } = await this.authService.verifyRefreshToken(token);
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return { message: 'Tokens renovados correctamente' };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -31,16 +62,12 @@ export class AuthController {
     return this.authService.validateToken(req.user as User);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('logout')
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('auth_token', {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-    });
-
+    res.clearCookie('access_token');
+    res.clearCookie('refresh_token');
     return { message: 'Sesión cerrada correctamente' };
   }
-
 
 }

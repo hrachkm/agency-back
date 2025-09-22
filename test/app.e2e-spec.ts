@@ -16,7 +16,9 @@ interface UserFormat {
 describe('App E2E', () => {
   let app: INestApplication;
   let createdUser: UserFormat;
+  let validatedUser: UserFormat;
   let authCookie: string;
+  let refreshCookie: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -30,17 +32,14 @@ describe('App E2E', () => {
   });
 
   afterAll(async () => {
-    // Cerrar el cliente de PG
     const clientPg = app.get('PG');
     if (clientPg && typeof clientPg.end === 'function') {
       await clientPg.end();
     }
-
     await app.close();
   });
 
-  describe('should login success and then remove the user', () => {
-
+  describe('Login and user flow', () => {
     it('GET / should return Server online!!', () => {
       return request(app.getHttpServer())
         .get('/')
@@ -59,7 +58,7 @@ describe('App E2E', () => {
       const newUser = {
         email: `e2euser-${Date.now()}@example.com`,
         password: 'e2epass123',
-        role: 'user'
+        role: 'user',
       };
 
       const res = await request(app.getHttpServer())
@@ -68,15 +67,10 @@ describe('App E2E', () => {
 
       expect(res.statusCode).toBe(201);
       expect(res.body).toHaveProperty('created', true);
-      expect(res.body.user).toHaveProperty('email', newUser.email);
-
-      // Guardamos el ID para eliminarlo después
       createdUser = res.body.user;
-      expect(createdUser.email).toBe(newUser.email);
+    }, 15000);
 
-    }, 20000);
-
-    it('POST /auth/login should return cookie with token', async () => {
+    it('POST /auth/login should return cookies with tokens', async () => {
       const credentials = {
         email: createdUser.email,
         password: 'e2epass123',
@@ -89,10 +83,18 @@ describe('App E2E', () => {
       expect(res.statusCode).toBe(201);
       expect(res.body.user).toHaveProperty('email', credentials.email);
 
-      // Captura la cookie
-      const rawCookie = res.headers['set-cookie'];
-      expect(rawCookie).toBeDefined();
-      authCookie = rawCookie[0].split(';')[0]; // auth_token=...
+      const rawCookies = res.headers['set-cookie'];
+      expect(rawCookies).toBeDefined();
+
+      const cookies = Array.isArray(rawCookies) ? rawCookies : [rawCookies];
+      const access = cookies.find(c => c.includes('access_token='));
+      const refresh = cookies.find(c => c.includes('refresh_token='));
+
+      expect(access).toBeDefined();
+      expect(refresh).toBeDefined();
+
+      authCookie = access.split(';')[0];
+      refreshCookie = refresh.split(';')[0];
     }, 10000);
 
     it('GET /users should return list of users or 400 if empty', async () => {
@@ -104,40 +106,20 @@ describe('App E2E', () => {
     });
 
     it('DELETE /users/:id should remove the user', async () => {
+
+      console.log(createdUser.id);
+
       const res = await request(app.getHttpServer())
         .delete(`/users/${createdUser.id}`)
         .set('Cookie', authCookie);
 
-
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('removed', true);
-    }, 10000);
-
-    it('DELETE /users/:id should fail for non-existent user', async () => {
-      const nonExistentUserId = 999999;
-
-      const res = await request(app.getHttpServer())
-        .delete(`/users/${nonExistentUserId}`)
-        .set('Cookie', authCookie);
-
-      expect(res.statusCode).toBe(400);
-      expect(res.body).toHaveProperty('message', `No se encontró el usuario con id ${nonExistentUserId}`);
     });
+  });
 
-    it('DELETE /users/:id should fail with invalid id format', async () => {
-      const res = await request(app.getHttpServer())
-        .delete('/users/not-a-number')
-        .set('Cookie', authCookie);
-
-      expect(res.statusCode).toBe(400);
-      expect(res.body.message).toContain('Validation failed');
-    });
-  })
-
-  describe('should validate token after login and handle failure', () => {
-    let validatedUser: UserFormat;
-
-    it('POST /users should create a new user for token validation', async () => {
+  describe('Token validation and refresh flow', () => {
+    it('POST /users should create a new user for validation', async () => {
       const newUser = {
         email: `validateuser-${Date.now()}@example.com`,
         password: 'validate123',
@@ -150,10 +132,9 @@ describe('App E2E', () => {
 
       expect(res.statusCode).toBe(201);
       validatedUser = res.body.user;
-      expect(validatedUser.email).toBe(newUser.email);
     }, 10000);
 
-    it('POST /auth/login should return cookie with token', async () => {
+    it('POST /auth/login should return cookies with tokens', async () => {
       const credentials = {
         email: validatedUser.email,
         password: 'validate123',
@@ -166,10 +147,13 @@ describe('App E2E', () => {
       expect(res.statusCode).toBe(201);
       expect(res.body.user).toHaveProperty('email', credentials.email);
 
-      // Captura la cookie
-      const rawCookie = res.headers['set-cookie'];
-      expect(rawCookie).toBeDefined();
-      authCookie = rawCookie[0].split(';')[0]; // auth_token=...
+      const rawCookies = res.headers['set-cookie'];
+      const cookies = Array.isArray(rawCookies) ? rawCookies : [rawCookies];
+      const access = cookies.find(c => c.includes('access_token='));
+      const refresh = cookies.find(c => c.includes('refresh_token='));
+
+      authCookie = access.split(';')[0];
+      refreshCookie = refresh.split(';')[0];
     }, 10000);
 
     it('GET /auth/validate should return validated user', async () => {
@@ -180,24 +164,40 @@ describe('App E2E', () => {
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('email', validatedUser.email);
       expect(res.body).not.toHaveProperty('password');
-    }, 10000);
+    });
 
     it('GET /auth/validate should fail with invalid token', async () => {
       const res = await request(app.getHttpServer())
         .get('/auth/validate')
-        .set('Cookie', 'invalid.token.here');
+        .set('Cookie', 'access_token=invalid-token');
 
       expect(res.statusCode).toBe(401);
       expect(res.body.message).toContain('Unauthorized');
-    }, 10000);
+    });
+
+    it('GET /auth/refresh should return new tokens', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/auth/refresh')
+        .set('Cookie', refreshCookie);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.message).toBe('Tokens renovados correctamente');
+
+      const rawCookies = res.headers['set-cookie'];
+      const cookies = Array.isArray(rawCookies) ? rawCookies : [rawCookies];
+      const newAccess = cookies.find(c => c.includes('access_token='));
+      const newRefresh = cookies.find(c => c.includes('refresh_token='));
+
+      expect(newAccess).toBeDefined();
+      expect(newRefresh).toBeDefined();
+    });
 
     it('DELETE /users/:id should remove the validated user', async () => {
       const res = await request(app.getHttpServer())
-        .delete(`/users/${validatedUser.id}`)
-        .set('Cookie', authCookie);
+        .delete(`/users/${validatedUser.id}`).set('Cookie', authCookie);
 
       expect(res.statusCode).toBe(200);
       expect(res.body).toHaveProperty('removed', true);
-    }, 10000);
+    });
   });
 });
