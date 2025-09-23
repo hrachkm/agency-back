@@ -4,7 +4,7 @@ import * as bcrypt from 'bcrypt';
 
 import { User } from '@/users/entities/user.entity';
 import { UsersService } from '@/users/services/users.service';
-import { PayloadToken } from '@/auth/models/token.model';
+import { PayloadAccessToken, PayloadRefreshToken } from '@/auth/models/token.model';
 
 @Injectable()
 export class AuthService {
@@ -31,14 +31,18 @@ export class AuthService {
 	}
 
 	generateTokens(user: User) {
-		const payload: PayloadToken = {
+		const payloadAccess: PayloadAccessToken = {
 			role: user.role,
 			email: user.email,
 		};
 
-		const accessToken = this.jwtService.sign(payload);
+		const payloadRefresh: PayloadRefreshToken = {
+			ui: user.userId
+		};
 
-		const refreshToken = this.jwtService.sign(payload, {
+		const accessToken = this.jwtService.sign(payloadAccess);
+
+		const refreshToken = this.jwtService.sign(payloadRefresh, {
 			secret: process.env.JWT_REFRESH_SECRET,
 			expiresIn: '7d',
 		});
@@ -47,7 +51,7 @@ export class AuthService {
 	}
 
 	async verifyRefreshToken(token) {
-		let payload: PayloadToken;
+		let payload: PayloadRefreshToken;
 		try {
 			payload = this.jwtService.verify(token, {
 				secret: process.env.JWT_REFRESH_SECRET,
@@ -58,7 +62,7 @@ export class AuthService {
 		
 		try {
 
-			const user = await this.usersService.findOne(payload.email);
+			const user = await this.usersService.findOneByUserId(payload.ui);
 
 			const { accessToken, refreshToken } = this.generateTokens(user);
 			delete user.password

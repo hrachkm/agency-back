@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { AuthService } from '@/auth/service/auth.service';
 import { UsersService } from '@/users/services/users.service';
 import { User } from '@/users/entities/user.entity';
-import dayjs from 'dayjs';
+import { PayloadRefreshToken } from '../models/token.model';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -15,6 +15,7 @@ describe('AuthService', () => {
 
   const mockUser: User = {
     id: 1,
+    userId: "c7zBz1KxJ9",
     email: 'test@example.com',
     password: 'hashedPassword',
     role: 'admin',
@@ -28,6 +29,7 @@ describe('AuthService', () => {
           provide: UsersService,
           useValue: {
             findOne: jest.fn(),
+            findOneByUserId: jest.fn(),
           },
         },
         {
@@ -85,12 +87,17 @@ describe('AuthService', () => {
 
   describe('verifyRefreshToken', () => {
     it('should return new tokens and user if refresh token is valid', async () => {
-      const payload = { email: mockUser.email, role: mockUser.role };
+      const payload: PayloadRefreshToken = { ui: mockUser.userId };
       jest.spyOn(jwtService, 'verify').mockReturnValue(payload);
-      jest.spyOn(usersService, 'findOne').mockResolvedValue(mockUser);
+      jest.spyOn(usersService, 'findOneByUserId').mockResolvedValue(mockUser);
       jest.spyOn(jwtService, 'sign').mockReturnValue('new-token');
 
       const result = await authService.verifyRefreshToken('valid-token');
+
+      expect(result.user).toHaveProperty('userId');
+      expect(typeof result.user.userId).toBe('string');
+      expect(result.user.userId).toStrictEqual(mockUser.userId);
+      expect(result.user.userId).toHaveLength(10);
       expect(result).toEqual({
         accessToken: 'new-token',
         refreshToken: 'new-token',

@@ -3,12 +3,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from 'pg';
 import * as bcrypt from 'bcrypt';
+import ShortUniqueId from 'short-unique-id';
 
 import { CreateUserDto, RegisteredUserDto } from '@/users/dto/user.dto';
 import { User } from '@/users/entities/user.entity';
 
 @Injectable()
 export class UsersService {
+
+  private suid = new ShortUniqueId({ length: 10 });
 
   constructor(
     @Inject('PG') private clientPg: Client,
@@ -32,6 +35,15 @@ export class UsersService {
     return user;
   }
 
+  //TODO: Agregar a test
+  async findOneByUserId(userId: string) {
+    const user = await this.userRepo.findOne({ where: { userId } });
+
+    if (!user) throw new BadRequestException('Usuario no registrado');
+
+    return user;
+  }
+
   async create(newUser: CreateUserDto) {
     const { email } = newUser;
     const isRegistered = await this.userRepo.findOne({ where: { email } });
@@ -40,7 +52,8 @@ export class UsersService {
     const hashPassword = await bcrypt.hash(newUser.password, 17);
     newUser.password = hashPassword;
 
-    const created = await this.userRepo.create(newUser);
+    let created = await this.userRepo.create(newUser);
+    created.userId = this.suid.rnd();
     const userAdded = await this.userRepo.save(created);
 
     if (!userAdded) throw new BadRequestException('No se pudo registrar el usuario', {

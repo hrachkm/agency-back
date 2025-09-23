@@ -107,8 +107,6 @@ describe('App E2E', () => {
 
     it('DELETE /users/:id should remove the user', async () => {
 
-      console.log(createdUser.id);
-
       const res = await request(app.getHttpServer())
         .delete(`/users/${createdUser.id}`)
         .set('Cookie', authCookie);

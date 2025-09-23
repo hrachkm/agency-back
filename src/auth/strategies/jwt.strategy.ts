@@ -5,7 +5,7 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 
 import config from '@/config';
-import { PayloadToken } from '@/auth/models/token.model';
+import { PayloadAccessToken } from '@/auth/models/token.model';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 		});
 	}
 
-	validate(payload: PayloadToken) {
+	validate(payload: PayloadAccessToken) {
 		return payload;
 	}
 }

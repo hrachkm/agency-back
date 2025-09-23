@@ -11,6 +11,7 @@ describe('AuthController', () => {
 
   const mockUser: User = {
     id: 1,
+    userId: "c7zBz1KxJ9",
     email: 'test@example.com',
     password: 'hashedPassword',
     role: 'admin',
