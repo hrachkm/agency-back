@@ -37,7 +37,7 @@ export class AuthController {
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.refresh_token;
 
-    const { accessToken, refreshToken } = await this.authService.verifyRefreshToken(token);
+    const { accessToken, refreshToken, user } = await this.authService.verifyRefreshToken(token);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
@@ -53,13 +53,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return { message: 'Tokens renovados correctamente' };
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('validate')
-  validate(@Req() req: Request) {
-    return this.authService.validateToken(req.user as User);
+    return user;
   }
 
   @UseGuards(JwtAuthGuard)

@@ -29,8 +29,7 @@ describe('AuthController', () => {
           provide: AuthService,
           useValue: {
             generateTokens: jest.fn().mockReturnValue(mockTokens),
-            verifyRefreshToken: jest.fn().mockResolvedValue(mockTokens),
-            validateToken: jest.fn(),
+            verifyRefreshToken: jest.fn().mockResolvedValue({ ...mockTokens, user: mockUser }),
           },
         },
       ],
@@ -70,7 +69,8 @@ describe('AuthController', () => {
       expect(authService.verifyRefreshToken).toHaveBeenCalledWith('valid-token');
       expect(mockCookie).toHaveBeenCalledWith('access_token', mockTokens.accessToken, expect.any(Object));
       expect(mockCookie).toHaveBeenCalledWith('refresh_token', mockTokens.refreshToken, expect.any(Object));
-      expect(result).toEqual({ message: 'Tokens renovados correctamente' });
+      expect(result).toEqual(mockUser);
+
     });
 
     it('should throw UnauthorizedException if token is invalid', async () => {
@@ -81,43 +81,16 @@ describe('AuthController', () => {
 
       await expect(controller.refresh(mockRequest, mockResponse)).rejects.toThrow(UnauthorizedException);
     });
-  });
 
-  describe('validate', () => {
-    it('should return validated user from AuthService', async () => {
-      const now = dayjs().toDate();
+    it('should throw BadRequestException if user is not found', async () => {
+      jest.spyOn(authService, 'verifyRefreshToken').mockRejectedValue(
+        new BadRequestException('Usuario no encontrado')
+      );
 
-      const validatedUser = {
-        ...mockUser,
-        createdAt: now,
-        updatedAt: now,
-      };
+      const mockRequest = { cookies: { refresh_token: 'valid-token' } } as any;
+      const mockResponse = { cookie: jest.fn() } as any;
 
-      jest.spyOn(authService, 'validateToken').mockResolvedValue(validatedUser);
-
-      const mockRequest = { user: mockUser } as any;
-
-      const result = await controller.validate(mockRequest);
-
-      expect(result).toMatchObject({
-        id: mockUser.id,
-        email: mockUser.email,
-        role: mockUser.role,
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      expect(result).not.toHaveProperty('hashedPassword');
-      expect(authService.validateToken).toHaveBeenCalledWith(mockUser);
-    });
-
-
-    it('should throw BadRequestException if user not found', async () => {
-      jest.spyOn(authService, 'validateToken').mockRejectedValue(new BadRequestException('Usuario no registrado'));
-
-      const mockRequest = { user: { email: 'notfound@example.com' } } as any;
-
-      await expect(controller.validate(mockRequest)).rejects.toThrow(BadRequestException);
+      await expect(controller.refresh(mockRequest, mockResponse)).rejects.toThrow(BadRequestException);
     });
   });
 

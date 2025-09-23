@@ -55,17 +55,18 @@ export class AuthService {
 		} catch (err) {
 			throw new UnauthorizedException('Refresh token inválido o expirado');
 		}
+		
+		try {
 
-		const user = await this.usersService.findOne(payload.email);
-		const { accessToken, refreshToken } = this.generateTokens(user);
+			const user = await this.usersService.findOne(payload.email);
 
-		return { accessToken, refreshToken };
-	}
-
-	async validateToken(user: User) {
-		const validatedUser = await this.usersService.findOne(user.email);
-		delete validatedUser.password;
-		return validatedUser;
+			const { accessToken, refreshToken } = this.generateTokens(user);
+			delete user.password
+			return { accessToken, refreshToken, user };
+			
+		} catch (err) {
+			throw new BadRequestException('Usuario no encontrado');
+		}
 	}
 
 }

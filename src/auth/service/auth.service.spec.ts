@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { AuthService } from '@/auth/service/auth.service';
 import { UsersService } from '@/users/services/users.service';
 import { User } from '@/users/entities/user.entity';
+import dayjs from 'dayjs';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -83,7 +84,7 @@ describe('AuthService', () => {
   });
 
   describe('verifyRefreshToken', () => {
-    it('should return new tokens if refresh token is valid', async () => {
+    it('should return new tokens and user if refresh token is valid', async () => {
       const payload = { email: mockUser.email, role: mockUser.role };
       jest.spyOn(jwtService, 'verify').mockReturnValue(payload);
       jest.spyOn(usersService, 'findOne').mockResolvedValue(mockUser);
@@ -93,6 +94,7 @@ describe('AuthService', () => {
       expect(result).toEqual({
         accessToken: 'new-token',
         refreshToken: 'new-token',
+        user: mockUser,
       });
     });
 
@@ -103,24 +105,13 @@ describe('AuthService', () => {
 
       await expect(authService.verifyRefreshToken('invalid-token')).rejects.toThrow(UnauthorizedException);
     });
-  });
-
-  describe('validateToken', () => {
-    it('should return user without password', async () => {
-      const userWithPassword = { ...mockUser, createdAt: new Date(), updatedAt: new Date() };
-      jest.spyOn(usersService, 'findOne').mockResolvedValue(userWithPassword);
-
-      const result = await authService.validateToken(mockUser);
-      expect(result).not.toHaveProperty('password');
-      expect(result.email).toBe(mockUser.email);
-    });
 
     it('should throw BadRequestException if user is not found', async () => {
-      jest.spyOn(usersService, 'findOne').mockRejectedValue(new BadRequestException('Usuario no registrado'));
+      const payload = { email: 'notfound@example.com', role: 'user' };
+      jest.spyOn(jwtService, 'verify').mockReturnValue(payload);
+      jest.spyOn(usersService, 'findOne').mockRejectedValue(new BadRequestException('Usuario no encontrado'));
 
-      await expect(authService.validateToken({ email: 'notfound@example.com' } as User))
-        .rejects
-        .toThrow(BadRequestException);
+      await expect(authService.verifyRefreshToken('valid-token')).rejects.toThrow(BadRequestException);
     });
   });
 });

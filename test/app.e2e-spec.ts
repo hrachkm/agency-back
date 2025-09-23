@@ -156,32 +156,14 @@ describe('App E2E', () => {
       refreshCookie = refresh.split(';')[0];
     }, 10000);
 
-    it('GET /auth/validate should return validated user', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/auth/validate')
-        .set('Cookie', authCookie);
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body).toHaveProperty('email', validatedUser.email);
-      expect(res.body).not.toHaveProperty('password');
-    });
-
-    it('GET /auth/validate should fail with invalid token', async () => {
-      const res = await request(app.getHttpServer())
-        .get('/auth/validate')
-        .set('Cookie', 'access_token=invalid-token');
-
-      expect(res.statusCode).toBe(401);
-      expect(res.body.message).toContain('Unauthorized');
-    });
-
     it('GET /auth/refresh should return new tokens', async () => {
       const res = await request(app.getHttpServer())
         .get('/auth/refresh')
         .set('Cookie', refreshCookie);
 
       expect(res.statusCode).toBe(200);
-      expect(res.body.message).toBe('Tokens renovados correctamente');
+      expect(res.body).toHaveProperty('email', validatedUser.email);
+      expect(res.body).not.toHaveProperty('password');
 
       const rawCookies = res.headers['set-cookie'];
       const cookies = Array.isArray(rawCookies) ? rawCookies : [rawCookies];
@@ -191,6 +173,16 @@ describe('App E2E', () => {
       expect(newAccess).toBeDefined();
       expect(newRefresh).toBeDefined();
     });
+
+    it('GET /auth/refresh should fail with invalid token', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/auth/refresh')
+        .set('Cookie', 'refresh_token=invalid-token');
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.message).toContain('Refresh token inválido');
+    });
+
 
     it('DELETE /users/:id should remove the validated user', async () => {
       const res = await request(app.getHttpServer())
