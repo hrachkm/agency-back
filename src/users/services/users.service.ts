@@ -35,7 +35,6 @@ export class UsersService {
     return user;
   }
 
-  //TODO: Agregar a test
   async findOneByUserId(userId: string) {
     const user = await this.userRepo.findOne({ where: { userId } });
 
@@ -45,6 +44,9 @@ export class UsersService {
   }
 
   async create(newUser: CreateUserDto) {
+
+    let uniqueId: string;
+    let exists = true;
     const { email } = newUser;
     const isRegistered = await this.userRepo.findOne({ where: { email } });
     if (!!isRegistered) throw new BadRequestException('Este usuario ya está registrado');
@@ -53,7 +55,15 @@ export class UsersService {
     newUser.password = hashPassword;
 
     let created = await this.userRepo.create(newUser);
-    created.userId = this.suid.rnd();
+
+    // Generar un userId único
+    do {
+      uniqueId = this.suid.rnd();
+      const existing = await this.userRepo.findOne({ where: { userId: uniqueId } });
+      exists = !!existing;
+    } while (exists);
+
+    created.userId = uniqueId;
     const userAdded = await this.userRepo.save(created);
 
     if (!userAdded) throw new BadRequestException('No se pudo registrar el usuario', {
