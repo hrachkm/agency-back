@@ -1,14 +1,25 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import * as fs from 'fs';
+
 import { AppModule } from './app.module';
 
 import config from './config';
 
-const { port, allowedOrigins } = config().server;
+const { port, allowedOrigins, ssl } = config().server;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+
+   //Configuración HTTPS opcional
+  const httpsOptions = ssl.enabled
+    ? {
+        key: fs.readFileSync(ssl.keyPath),
+        cert: fs.readFileSync(ssl.certPath),
+      }
+    : undefined;
+
+  const app = await NestFactory.create(AppModule, { httpsOptions});
   app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
@@ -38,6 +49,6 @@ async function bootstrap() {
   });
   const isRunning = await app.listen(port);
 
-  isRunning ? console.info(`Server running in port ${port}`) : console.error(`Error running server`);
+  isRunning ? console.info(`Server running in port ${port} with ${ssl.enabled ? 'HTTPS' : 'HTTP'}`) : console.error(`Error running server`);
 }
 bootstrap();
