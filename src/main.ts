@@ -2,7 +2,9 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import * as fs from 'fs';
+import helmet from 'helmet';
 
+//TODO Implementar documentacion con swagger
 import { AppModule } from './app.module';
 
 import config from './config';
@@ -11,15 +13,22 @@ const { port, allowedOrigins, ssl } = config().server;
 
 async function bootstrap() {
 
-   //Configuración HTTPS opcional
+  //Configuración HTTPS opcional
   const httpsOptions = ssl.enabled
     ? {
-        key: fs.readFileSync(ssl.keyPath),
-        cert: fs.readFileSync(ssl.certPath),
-      }
+      key: fs.readFileSync(ssl.keyPath),
+      cert: fs.readFileSync(ssl.certPath),
+    }
     : undefined;
 
-  const app = await NestFactory.create(AppModule, { httpsOptions});
+  const app = await NestFactory.create(AppModule, { httpsOptions });
+  // Seguridad con Helmet
+  app.use(
+    helmet({
+      contentSecurityPolicy: false, // Puedes personalizar esto si usas CSP
+    })
+  );
+
   app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
