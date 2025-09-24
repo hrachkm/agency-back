@@ -38,6 +38,18 @@ $ yarn migration:generate src/database/migrations/{migration name}
 $ yarn migration:revert
 ```
 
+## Go to API docs
+```bash
+# url
+$ https://localhost:3100/api/docs
+```
+
+## Create sample data
+```bash
+# url
+$ https://localhost:3100/seed
+```
+
 ## Compile and run the project
 
 ```bash

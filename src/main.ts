@@ -1,15 +1,15 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import * as fs from 'fs';
 import helmet from 'helmet';
 
-//TODO Implementar documentacion con swagger
 import { AppModule } from './app.module';
 
 import config from './config';
 
-const { port, allowedOrigins, ssl } = config().server;
+const { port, environment, allowedOrigins, ssl } = config().server;
 
 async function bootstrap() {
 
@@ -40,9 +40,19 @@ async function bootstrap() {
     })
   );
 
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+  if ((environment === 'development') || (environment === 'staging')) {
+    app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+    const configSwagger = new DocumentBuilder()
+      .setTitle('API Login Boilerplate')
+      .setDescription('Documentación de la API para autenticación y gestión de usuarios')
+      .setVersion('1.0')
+      .build();
+  
+    const document = SwaggerModule.createDocument(app, configSwagger);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
-  //👇 CORS configurado para permitir cookies seguras
+  //CORS configurado para permitir cookies seguras
   app.enableCors({
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
