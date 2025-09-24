@@ -100,7 +100,6 @@ describe('AuthService', () => {
       expect(result.user.userId).toHaveLength(10);
       expect(result).toEqual({
         accessToken: 'new-token',
-        refreshToken: 'new-token',
         user: mockUser,
       });
     });

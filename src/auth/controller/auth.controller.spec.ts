@@ -69,7 +69,6 @@ describe('AuthController', () => {
 
       expect(authService.verifyRefreshToken).toHaveBeenCalledWith('valid-token');
       expect(mockCookie).toHaveBeenCalledWith('access_token', mockTokens.accessToken, expect.any(Object));
-      expect(mockCookie).toHaveBeenCalledWith('refresh_token', mockTokens.refreshToken, expect.any(Object));
       expect(result).toEqual(mockUser);
 
     });
@@ -102,8 +101,8 @@ describe('AuthController', () => {
 
       const result = controller.logout(mockResponse);
 
-      expect(mockClearCookie).toHaveBeenCalledWith('access_token');
-      expect(mockClearCookie).toHaveBeenCalledWith('refresh_token');
+      expect(mockClearCookie).toHaveBeenCalledWith('access_token', { "httpOnly": true, "sameSite": "none", "secure": true });
+      expect(mockClearCookie).toHaveBeenCalledWith('refresh_token', { "httpOnly": true, "sameSite": "none", "secure": true });
       expect(result).toEqual({ message: 'Sesión cerrada correctamente' });
     });
   });

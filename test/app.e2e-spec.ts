@@ -166,10 +166,8 @@ describe('App E2E', () => {
       const rawCookies = res.headers['set-cookie'];
       const cookies = Array.isArray(rawCookies) ? rawCookies : [rawCookies];
       const newAccess = cookies.find(c => c.includes('access_token='));
-      const newRefresh = cookies.find(c => c.includes('refresh_token='));
 
       expect(newAccess).toBeDefined();
-      expect(newRefresh).toBeDefined();
     });
 
     it('GET /auth/refresh should fail with invalid token', async () => {
