@@ -64,9 +64,9 @@ export class AuthService {
 
 			const user = await this.usersService.findOneByUserId(payload.ui);
 
-			const { accessToken, refreshToken } = this.generateTokens(user);
+			const { accessToken } = this.generateTokens(user);
 			delete user.password
-			return { accessToken, refreshToken, user };
+			return { accessToken, user };
 			
 		} catch (err) {
 			throw new BadRequestException('Usuario no encontrado');

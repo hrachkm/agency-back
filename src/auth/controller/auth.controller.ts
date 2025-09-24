@@ -5,9 +5,9 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
 } from '@nestjs/swagger';
 
+import config from '@/config';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { AuthService } from '../service/auth.service';
 import { User } from '@/users/entities/user.entity';
@@ -29,54 +29,52 @@ export class AuthController {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 15 * 60 * 1000,
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
     return { user };
   }
 
   @Get('refresh')
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
-  @ApiResponse({ status: 200, description: 'Returns new access and refresh tokens' })
+  @ApiResponse({ status: 200, description: 'Returns new access token' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.refresh_token;
-
-    const { accessToken, refreshToken, user } = await this.authService.verifyRefreshToken(token);
+    const { accessToken, user } = await this.authService.verifyRefreshToken(token);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      sameSite: 'none',
       maxAge: 15 * 60 * 1000,
     });
-
-    res.cookie('refresh_token', refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
+  
     return user;
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('logout')
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Log out user and clear tokens' })
   @ApiResponse({ status: 200, description: 'Session successfully terminated' })
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token');
-    res.clearCookie('refresh_token');
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
     return { message: 'Sesión cerrada correctamente' };
   }
 
