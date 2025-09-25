@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
 import {
@@ -7,7 +8,8 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 
-import config from '@/config';
+import { ThrottleExceptionGuard } from '@/shared/guards/throttle-custom.guard.ts/throttle-custom.guard';
+
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { AuthService } from '../service/auth.service';
 import { User } from '@/users/entities/user.entity';
@@ -17,8 +19,10 @@ import { User } from '@/users/entities/user.entity';
 export class AuthController {
   constructor(private authService: AuthService) { }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('login')
   @UseGuards(AuthGuard('local'))
+  @UseGuards(ThrottleExceptionGuard)
   @ApiOperation({ summary: 'Authenticate user and issue tokens' })
   @ApiResponse({ status: 201, description: 'Returns access and refresh tokens in cookies' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })

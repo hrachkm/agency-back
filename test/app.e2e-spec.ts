@@ -20,8 +20,8 @@ describe('App E2E', () => {
   let authCookie: string;
   let refreshCookie: string;
 
-  beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+  beforeEach(async () => {
+    const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
@@ -31,7 +31,8 @@ describe('App E2E', () => {
     await app.init();
   });
 
-  afterAll(async () => {
+
+  afterEach(async () => {
     const clientPg = app.get('PG');
     if (clientPg && typeof clientPg.end === 'function') {
       await clientPg.end();
@@ -153,6 +154,30 @@ describe('App E2E', () => {
       authCookie = access.split(';')[0];
       refreshCookie = refresh.split(';')[0];
     }, 10000);
+
+    it('should block login after exceeding rate limit', async () => {
+      const credentials = {
+        email: validatedUser.email,
+        password: 'validate123',
+      };
+
+      const loginRequest = () =>
+        request(app.getHttpServer())
+          .post('/auth/login')
+          .send(credentials);
+
+      for (let i = 1; i <= 3; i++) {
+        const res = await loginRequest();
+        expect(res.statusCode).toBe(201);
+      }
+
+      const res = await loginRequest();
+      expect(res.statusCode).toBe(429);
+      expect(res.body).toEqual({
+        statusCode: 429,
+        message: 'Too many attempts. Please wait one minute and try again.',
+      });
+    }, 30000);
 
     it('GET /auth/refresh should return new tokens', async () => {
       const res = await request(app.getHttpServer())

@@ -1,5 +1,7 @@
+import { APP_GUARD } from '@nestjs/core';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import * as Joi from 'joi';
 
 import { AppController } from './app.controller';
@@ -22,12 +24,22 @@ import { SeedModule } from './seed/seed.module';
         JWT_ACCESS_SECRET: Joi.string().required(),
       })
     }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 10,
+        },
+      ],
+    }),
     DatabaseModule,
     UsersModule,
     AuthModule,
     SeedModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+  ],
 })
 export class AppModule {}

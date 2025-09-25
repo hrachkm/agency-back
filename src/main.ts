@@ -13,7 +13,7 @@ const { port, environment, allowedOrigins, ssl } = config().server;
 
 async function bootstrap() {
 
-  //Configuración HTTPS opcional
+  //Configuración HTTPS
   const httpsOptions = ssl.enabled
     ? {
       key: fs.readFileSync(ssl.keyPath),
