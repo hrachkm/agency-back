@@ -10,7 +10,12 @@ export default registerAs('config', () => {
 		server: {
 			port: parseInt(process.env.PORT) || 3100,
 			environment,
-			allowedOrigins: rawOrigins.split(',').map(origin => origin.trim())
+			allowedOrigins: rawOrigins.split(',').map(origin => origin.trim()),
+			ssl: {
+				enabled: process.env.SSL_ENABLED === 'true',
+				keyPath: process.env.SSL_KEY_PATH,
+				certPath: process.env.SSL_CERT_PATH,
+			},
 		},
 		database: {
 			type: process.env.DATABASE_TYPE,
@@ -24,6 +29,7 @@ export default registerAs('config', () => {
 			migrations: process.env.DATABASE_MIGRATIONS
 		},
 		apiKey: process.env.API_KEY,
-		jwtSecret: process.env.JWT_SECRET,
+		jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
+		jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
 	}
 });

@@ -5,7 +5,7 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 
 import config from '@/config';
-import { PayloadToken } from '@/auth/models/token.model';
+import { PayloadAccessToken } from '@/auth/models/token.model';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -14,15 +14,15 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 		super({
 			jwtFromRequest: ExtractJwt.fromExtractors([
 				(req: Request) => {
-					return req?.cookies?.auth_token || null;
+					return req?.cookies?.access_token || null;
 				}
 			]),
 			ignoreExpiration: false,
-			secretOrKey: configService.jwtSecret //Cambiar segun conveniencia del proyecto
+			secretOrKey: configService.jwtAccessSecret, //Cambiar segun conveniencia del proyecto
 		});
 	}
 
-	validate(payload: PayloadToken) {
+	validate(payload: PayloadAccessToken) {
 		return payload;
 	}
 }

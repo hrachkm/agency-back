@@ -15,15 +15,11 @@ import config from '@/config';
     UsersModule,
     PassportModule,
     JwtModule.registerAsync({
-      inject:[config.KEY],
-      useFactory: (configService: ConfigType<typeof config>) => {
-        return {
-          secret: configService.jwtSecret,
-          signOptions: {
-            expiresIn: '1d'
-          }
-        }
-      }
+        inject: [config.KEY],
+        useFactory: (configService: ConfigType<typeof config>) => ({
+          secret: configService.jwtAccessSecret,
+          signOptions: { expiresIn: '15m' },
+        }),
     }),
   ],
   controllers: [AuthController],

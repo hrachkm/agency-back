@@ -7,6 +7,7 @@ import { User } from '@/users/entities/user.entity';
 
 interface UserFormat {
   id: number;
+  userId: string;
   email: string;
   password: string;
   role: string;
@@ -90,7 +91,7 @@ describe('UsersService', () => {
     it('should create and return new user', async () => {
       const newUser = { email: 'new@example.com', password: '1234', role: 'user' };
       const hashedPassword = 'hashed1234';
-      const createdUser = { ...newUser, password: hashedPassword, id: 3 };
+      const createdUser = { ...newUser, password: hashedPassword, id: 3, userId: '2dsdf51dfg' };
 
       userRepo.findOne.mockResolvedValue(null);
       jest.spyOn(bcrypt, 'hash').mockResolvedValue(hashedPassword);
@@ -99,6 +100,9 @@ describe('UsersService', () => {
 
       userCreated = await service.create(newUser);
       expect(userCreated).toEqual({ created: true, user: createdUser });
+      expect(userCreated.user.userId).toHaveLength(10);
+      expect(typeof userCreated.user.userId).toBe('string');
+
     });
 
     it('should throw if user already exists', async () => {

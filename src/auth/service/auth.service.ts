@@ -1,11 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 import { User } from '@/users/entities/user.entity';
 import { UsersService } from '@/users/services/users.service';
-import { PayloadToken } from '@/auth/models/token.model';
-
+import { PayloadAccessToken, PayloadRefreshToken } from '@/auth/models/token.model';
 
 @Injectable()
 export class AuthService {
@@ -18,33 +17,60 @@ export class AuthService {
 	async validateUser(email: string, password: string) {
 
 		const user = await this.usersService.findOne(email);
-		const isMatch = await user ? await bcrypt.compare(password, user.password) : false
 
-		if (user && isMatch) {
-			return user;
-		} else if (!isMatch) {
-			throw new BadRequestException('Contraseña incorrecta');
-		} else {
+		if(!user){
 			return null;
 		}
+
+		const isMatch = await user ? await bcrypt.compare(password, user.password) : false
+		if (!isMatch) {
+			throw new BadRequestException('Contraseña incorrecta');
+		}
+
+		return user;
 	}
 
-	generateJwt(user: User) {
-		const payload: PayloadToken = {
+	generateTokens(user: User) {
+		const payloadAccess: PayloadAccessToken = {
 			role: user.role,
 			email: user.email,
-		}
+		};
 
-		return {
-			token: this.jwtService.sign(payload),
-			user
-		}
+		const payloadRefresh: PayloadRefreshToken = {
+			ui: user.userId
+		};
+
+		const accessToken = this.jwtService.sign(payloadAccess);
+
+		const refreshToken = this.jwtService.sign(payloadRefresh, {
+			secret: process.env.JWT_REFRESH_SECRET,
+			expiresIn: '7d',
+		});
+
+		return { accessToken, refreshToken };
 	}
 
-	async validateToken(user: User) {
-		const validatedUser = await this.usersService.findOne(user.email);
-		delete validatedUser.password;
-		return validatedUser;
+	async verifyRefreshToken(token) {
+		let payload: PayloadRefreshToken;
+		try {
+			payload = this.jwtService.verify(token, {
+				secret: process.env.JWT_REFRESH_SECRET,
+			});
+		} catch (err) {
+			throw new UnauthorizedException('Refresh token inválido o expirado');
+		}
+		
+		try {
+
+			const user = await this.usersService.findOneByUserId(payload.ui);
+
+			const { accessToken } = this.generateTokens(user);
+			delete user.password
+			return { accessToken, user };
+			
+		} catch (err) {
+			throw new BadRequestException('Usuario no encontrado');
+		}
 	}
 
 }

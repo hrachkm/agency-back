@@ -1,5 +1,6 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import * as dayjs from 'dayjs';
 import { AuthController } from './auth.controller';
 import { AuthService } from '../service/auth.service';
 import { User } from '@/users/entities/user.entity';
@@ -10,14 +11,15 @@ describe('AuthController', () => {
 
   const mockUser: User = {
     id: 1,
+    userId: "c7zBz1KxJ9",
     email: 'test@example.com',
     password: 'hashedPassword',
     role: 'admin',
   } as User;
 
-  const mockTokenResponse = {
-    token: 'mock-jwt-token',
-    user: mockUser,
+  const mockTokens = {
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
   };
 
   beforeEach(async () => {
@@ -27,8 +29,8 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: {
-            generateJwt: jest.fn().mockReturnValue(mockTokenResponse),
-            validateToken: jest.fn(),
+            generateTokens: jest.fn().mockReturnValue(mockTokens),
+            verifyRefreshToken: jest.fn().mockResolvedValue({ ...mockTokens, user: mockUser }),
           },
         },
       ],
@@ -43,77 +45,65 @@ describe('AuthController', () => {
   });
 
   describe('login', () => {
-    it('should set cookie and return token and user', async() => {
+    it('should set cookies and return user', async () => {
       const mockRequest = { user: mockUser } as any;
-
       const mockCookie = jest.fn();
       const mockResponse = { cookie: mockCookie } as any;
 
       const result = await controller.login(mockRequest, mockResponse);
 
-      expect(authService.generateJwt).toHaveBeenCalledWith(mockUser);
-      expect(mockCookie).toHaveBeenCalledWith('auth_token', mockTokenResponse.token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 1000 * 60 * 60 * 24, // 1 día
-      });
+      expect(authService.generateTokens).toHaveBeenCalledWith(mockUser);
+      expect(mockCookie).toHaveBeenCalledWith('access_token', mockTokens.accessToken, expect.any(Object));
+      expect(mockCookie).toHaveBeenCalledWith('refresh_token', mockTokens.refreshToken, expect.any(Object));
       expect(result).toEqual({ user: mockUser });
     });
   });
 
+  describe('refresh', () => {
+    it('should verify token, set cookies and return message', async () => {
+      const mockRequest = { cookies: { refresh_token: 'valid-token' } } as any;
+      const mockCookie = jest.fn();
+      const mockResponse = { cookie: mockCookie } as any;
 
-  describe('validate', () => {
-    it('should return validated user from AuthService', async () => {
-      const validatedUser = {
-        id: 1,
-        email: 'test@example.com',
-        password: 'test123',
-        role: 'admin',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const result = await controller.refresh(mockRequest, mockResponse);
 
-      // Simula el método validateToken
-      jest.spyOn(authService, 'validateToken').mockResolvedValue(validatedUser);
+      expect(authService.verifyRefreshToken).toHaveBeenCalledWith('valid-token');
+      expect(mockCookie).toHaveBeenCalledWith('access_token', mockTokens.accessToken, expect.any(Object));
+      expect(result).toEqual(mockUser);
 
-      const mockRequest = {
-        user: mockUser,
-      } as any;
-
-      const result = await controller.validate(mockRequest);
-      expect(result).toEqual(validatedUser);
-      expect(authService.validateToken).toHaveBeenCalledWith(mockUser);
     });
 
-    it('should throw BadRequestException if user not found', async () => {
-      jest
-        .spyOn(authService, 'validateToken')
-        .mockRejectedValue(new BadRequestException('Usuario no registrado'));
+    it('should throw UnauthorizedException if token is invalid', async () => {
+      jest.spyOn(authService, 'verifyRefreshToken').mockRejectedValue(new UnauthorizedException('Refresh token inválido'));
 
-      const mockRequest = {
-        user: { email: 'notfound@example.com' },
-      } as any;
+      const mockRequest = { cookies: { refresh_token: 'invalid-token' } } as any;
+      const mockResponse = { cookie: jest.fn() } as any;
 
-      await expect(controller.validate(mockRequest)).rejects.toThrow(BadRequestException);
-      await expect(controller.validate(mockRequest)).rejects.toThrow('Usuario no registrado');
+      await expect(controller.refresh(mockRequest, mockResponse)).rejects.toThrow(UnauthorizedException);
     });
 
+    it('should throw BadRequestException if user is not found', async () => {
+      jest.spyOn(authService, 'verifyRefreshToken').mockRejectedValue(
+        new BadRequestException('Usuario no encontrado')
+      );
+
+      const mockRequest = { cookies: { refresh_token: 'valid-token' } } as any;
+      const mockResponse = { cookie: jest.fn() } as any;
+
+      await expect(controller.refresh(mockRequest, mockResponse)).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('logout', () => {
-    it('should clear auth_token cookie and return message', () => {
+    it('should clear cookies and return message', () => {
       const mockClearCookie = jest.fn();
       const mockResponse = { clearCookie: mockClearCookie } as any;
 
       const result = controller.logout(mockResponse);
-      expect(mockClearCookie).toHaveBeenCalledWith('auth_token', {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
-      });
+
+      expect(mockClearCookie).toHaveBeenCalledWith('access_token', { "httpOnly": true, "sameSite": "none", "secure": true });
+      expect(mockClearCookie).toHaveBeenCalledWith('refresh_token', { "httpOnly": true, "sameSite": "none", "secure": true });
       expect(result).toEqual({ message: 'Sesión cerrada correctamente' });
     });
   });
-
 });
