@@ -8,6 +8,7 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 
+import { generateCsrfToken } from '@/csrf.config';
 import { ThrottleExceptionGuard } from '@/shared/guards/throttle-custom.guard.ts/throttle-custom.guard';
 
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
@@ -46,7 +47,13 @@ export class AuthController {
     return { user };
   }
 
-  @Get('refresh')
+  @Get('csrf-token')
+  getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const csrfToken = generateCsrfToken(req, res);
+    return { csrfToken };
+  }
+
+  @Post('refresh')
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   @ApiResponse({ status: 200, description: 'Returns new access token' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
@@ -79,6 +86,12 @@ export class AuthController {
       secure: true,
       sameSite: 'none',
     });
+    res.clearCookie('XSRF_TOKEN', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+
     return { message: 'Sesión cerrada correctamente' };
   }
 
