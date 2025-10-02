@@ -67,7 +67,7 @@ export class AuthController {
       sameSite: 'none',
       maxAge: 15 * 60 * 1000,
     });
-  
+
     return user;
   }
 
@@ -95,4 +95,15 @@ export class AuthController {
     return { message: 'Sesión cerrada correctamente' };
   }
 
+  @Get('clean')
+  @ApiOperation({ summary: 'clear csrf token' })
+  @ApiResponse({ status: 200, description: 'Token csrf cleaned' })
+  clearToken(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('XSRF_TOKEN', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+    });
+    return { message: 'Sesión cerrada correctamente' };
+  }
 }
