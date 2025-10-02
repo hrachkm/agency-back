@@ -5,6 +5,8 @@ import * as cookieParser from 'cookie-parser';
 import * as fs from 'fs';
 import helmet from 'helmet';
 
+
+import { doubleCsrfProtection } from './csrf.config';
 import { AppModule } from './app.module';
 
 import config from './config';
@@ -30,6 +32,8 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
+  app.use(doubleCsrfProtection);
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -63,8 +67,7 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-token'],
   });
   const isRunning = await app.listen(port);
 
