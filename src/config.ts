@@ -11,11 +11,11 @@ export default registerAs('config', () => {
 			port: parseInt(process.env.PORT) || 3100,
 			environment,
 			allowedOrigins: rawOrigins.split(',').map(origin => origin.trim()),
-			ssl: {
+			/*ssl: {
 				enabled: process.env.SSL_ENABLED === 'true',
 				keyPath: process.env.SSL_KEY_PATH,
 				certPath: process.env.SSL_CERT_PATH,
-			},
+			},*/
 		},
 		database: {
 			type: process.env.DATABASE_TYPE,

@@ -11,19 +11,19 @@ import { AppModule } from './app.module';
 
 import config from './config';
 
-const { port, environment, allowedOrigins, ssl } = config().server;
+const { port, environment, allowedOrigins, /*ssl*/ } = config().server;
 
 async function bootstrap() {
 
   //Configuración HTTPS
-  const httpsOptions = ssl.enabled
+  /*const httpsOptions = ssl.enabled
     ? {
       key: fs.readFileSync(ssl.keyPath),
       cert: fs.readFileSync(ssl.certPath),
     }
-    : undefined;
+    : undefined;*/
 
-  const app = await NestFactory.create(AppModule, { httpsOptions });
+  const app = await NestFactory.create(AppModule, {/* httpsOptions*/ });
   // Seguridad con Helmet
   app.use(
     helmet({
@@ -71,6 +71,6 @@ async function bootstrap() {
   });
   const isRunning = await app.listen(port);
 
-  isRunning ? console.info(`Server running in port ${port} with ${ssl.enabled ? 'HTTPS' : 'HTTP'}`) : console.error(`Error running server`);
+  isRunning ? console.info(`Server running in port ${port} with HTTP`) : console.error(`Error running server`);
 }
 bootstrap();
