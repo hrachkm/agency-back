@@ -18,6 +18,9 @@ import config from '@/config';
 					username: user,
 					password,
 					database: dbName,
+					ssl: {
+						rejectUnauthorized: false
+					},
 					synchronize: false,
 					autoLoadEntities: true,
 				};

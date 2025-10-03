@@ -60,4 +60,4 @@ pgadmin
 postgres
 
 # SSL certificates
-/cert
+#/cert
