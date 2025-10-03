@@ -21,7 +21,6 @@ import config from '@/config';
 					ssl: {
 						rejectUnauthorized: false
 					},
-
 					synchronize: false,
 					autoLoadEntities: true,
 				};
