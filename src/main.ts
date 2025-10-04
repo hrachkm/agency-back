@@ -59,6 +59,7 @@ async function bootstrap() {
   //CORS configurado para permitir cookies seguras
   app.enableCors({
     origin: (origin, callback) => {
+      console.log(allowedOrigins);
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
