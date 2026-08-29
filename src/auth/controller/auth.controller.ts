@@ -1,12 +1,16 @@
-import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+﻿import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthGuard } from '@nestjs/passport';
 import { Request, Response } from 'express';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 import { generateCsrfToken } from '@/csrf.config';
 import { ThrottleExceptionGuard } from '@/shared/guards/throttle-custom.guard.ts/throttle-custom.guard';
@@ -14,20 +18,29 @@ import { ThrottleExceptionGuard } from '@/shared/guards/throttle-custom.guard.ts
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { AuthService } from '../service/auth.service';
 import { User } from '@/users/entities/user.entity';
+import { CreateUserDto } from '@/users/dto/user.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
+
+  @Post('register')
+  async register(@Body() createUserDto: CreateUserDto) {
+    return await this.authService.register(createUserDto);
+  }
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('login')
   @UseGuards(AuthGuard('local'))
   @UseGuards(ThrottleExceptionGuard)
   @ApiOperation({ summary: 'Authenticate user and issue tokens' })
-  @ApiResponse({ status: 201, description: 'Returns access and refresh tokens in cookies' })
+  @ApiResponse({
+    status: 201,
+    description: 'Returns access and refresh tokens in cookies',
+  })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  /*async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as User;
     const { accessToken, refreshToken } = this.authService.generateTokens(user);
 
@@ -45,8 +58,7 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     return { user };
-  }
-
+  }*/
   @Get('csrf-token')
   getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const csrfToken = generateCsrfToken(req, res);
@@ -57,7 +69,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   @ApiResponse({ status: 200, description: 'Returns new access token' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  /*async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.refresh_token;
     const { accessToken, user } = await this.authService.verifyRefreshToken(token);
 
@@ -69,8 +81,7 @@ export class AuthController {
     });
 
     return user;
-  }
-
+  }*/
   @UseGuards(JwtAuthGuard)
   @Get('logout')
   @ApiOperation({ summary: 'Log out user and clear tokens' })
