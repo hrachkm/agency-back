@@ -3,26 +3,23 @@ import { Injectable } from '@nestjs/common';
 import { UsersService } from '@/users/services/users.service';
 import { CreateUserDto } from '@/users/dto/user.dto';
 
-
 @Injectable()
 export class SeedService {
+  constructor(private usersService: UsersService) {}
 
-	constructor(private usersService: UsersService){}
+  async generateData() {
+    console.info('---------LIMPIANDO BASE DE DATOS----------');
+    await this.usersService.removeAll();
+    console.info('---------BASE DE DATOS LIMPIADA----------');
 
-	async generateData(){
-		console.info('---------LIMPIANDO BASE DE DATOS----------');
-			await this.usersService.removeAll();
-		console.info('---------BASE DE DATOS LIMPIADA----------');
-		
-		console.info('---------CREANDO USUARIOS----------');
-			await this.createUsers();
-		console.info('---------USUARIOS CREADOS----------');
+    console.info('---------CREANDO USUARIOS----------');
+    //await this.createUsers();
+    console.info('---------USUARIOS CREADOS----------');
 
-		return 'DATOS DE MUESTRA CREADOS';
+    return 'DATOS DE MUESTRA CREADOS';
+  }
 
-	}
-
-	async createUsers(){
+  /*async createUsers(){
 		const users: CreateUserDto[] = [
 			{
 				email: 'admin@example.com',
@@ -62,6 +59,5 @@ export class SeedService {
 			await this.usersService.create(users[i]);
 		}
 
-	}
-
+	}*/
 }
