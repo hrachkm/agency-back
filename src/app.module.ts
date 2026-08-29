@@ -20,9 +20,8 @@ import { SeedModule } from './seed/seed.module';
       load: [config],
       isGlobal: true,
       validationSchema: Joi.object({
-        API_KEY: Joi.string().required(),
         JWT_ACCESS_SECRET: Joi.string().required(),
-      })
+      }),
     }),
     ThrottlerModule.forRoot({
       throttlers: [
@@ -38,8 +37,6 @@ import { SeedModule } from './seed/seed.module';
     SeedModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-  ],
+  providers: [AppService],
 })
 export class AppModule {}
