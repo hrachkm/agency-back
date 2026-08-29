@@ -1,29 +1,31 @@
-
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+﻿import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index } from 'typeorm';
 import { Exclude } from 'class-transformer';
 
-@Entity()
+@Entity('users')
+@Index(['email'])
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ type: 'varchar', length: 20, unique: true})
-  userId: string
+  @Column({ type: 'varchar', length: 50 })
+  name: string;
 
-  @Column({ type: 'varchar', length: 100, unique: true })
-  email: string
+  @Column({ type: 'varchar', length: 30, unique: true })
+  email: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 8 })
   @Exclude()
-  password: string
+  password: string;
 
-  @Column({ type: 'varchar', length: 25 })
-  role: string
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean;
 
-  @CreateDateColumn({ type: 'timestamptz',  default: () => 'CURRENT_TIMESTAMP'})
-  createdAt: Date
+  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz',  default: () => 'CURRENT_TIMESTAMP'})
-  updatedAt: Date
+  @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
+  deletedAt: Date;
 }

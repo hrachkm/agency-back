@@ -10,19 +10,18 @@ import { User } from '@/users/entities/user.entity';
 
 @Injectable()
 export class UsersService {
-
   private suid = new ShortUniqueId({ length: 10 });
 
   constructor(
     @Inject('PG') private clientPg: Client,
-    @InjectRepository(User) private userRepo: Repository<User>
-  ) { }
+    @InjectRepository(User) private userRepo: Repository<User>,
+  ) {}
 
   async findAll() {
-
     const users = await this.userRepo.find({});
 
-    if (!users || (users.length === 0)) throw new BadRequestException('No hay usuarios registrados');
+    if (!users || users.length === 0)
+      throw new BadRequestException('No hay usuarios registrados');
 
     return users;
   }
@@ -35,45 +34,35 @@ export class UsersService {
     return user;
   }
 
-  async findOneByUserId(userId: string) {
+  /*async findOneByUserId(userId: string) {
     const user = await this.userRepo.findOne({ where: { userId } });
 
     if (!user) throw new BadRequestException('Usuario no registrado');
 
     return user;
-  }
+  }*/
 
   async create(newUser: CreateUserDto) {
-
-    let uniqueId: string;
-    let exists = true;
     const { email } = newUser;
     const isRegistered = await this.userRepo.findOne({ where: { email } });
-    if (!!isRegistered) throw new BadRequestException('Este usuario ya está registrado');
+    if (!!isRegistered)
+      throw new BadRequestException('Este usuario ya está registrado');
 
     const hashPassword = await bcrypt.hash(newUser.password, 17);
     newUser.password = hashPassword;
 
     let created = await this.userRepo.create(newUser);
-
-    // Generar un userId único
-    do {
-      uniqueId = this.suid.rnd();
-      const existing = await this.userRepo.findOne({ where: { userId: uniqueId } });
-      exists = !!existing;
-    } while (exists);
-
-    created.userId = uniqueId;
     const userAdded = await this.userRepo.save(created);
 
-    if (!userAdded) throw new BadRequestException('No se pudo registrar el usuario', {
-      cause: new Error(),
-      description: 'Add user error'
-    })
+    if (!userAdded)
+      throw new BadRequestException('No se pudo registrar el usuario', {
+        cause: new Error(),
+        description: 'Add user error',
+      });
 
     return {
       created: true,
-      user: userAdded
+      user: userAdded,
     };
   }
 
@@ -84,9 +73,8 @@ export class UsersService {
   async remove(id: number) {
     const result = await this.userRepo.query(
       `DELETE FROM "user" WHERE id = $1 RETURNING id, email, role, "createdAt", "updatedAt"`,
-      [id]
+      [id],
     );
-
 
     const deletedUser = result[0]?.[0];
 
@@ -98,7 +86,6 @@ export class UsersService {
       removed: true,
       user: deletedUser,
     };
-
   }
 
   async removeAll() {
@@ -111,6 +98,5 @@ export class UsersService {
     } catch (error) {
       return false;
     }
-
   }
 }
