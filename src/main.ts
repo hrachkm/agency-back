@@ -1,19 +1,23 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
 import * as fs from 'fs';
 import helmet from 'helmet';
 
-
 import { doubleCsrfProtection } from './csrf.config';
 import { AppModule } from './app.module';
 
-import config from './config';
-
-const { port, environment, allowedOrigins, /*ssl*/ } = config().server;
-
 async function bootstrap() {
+  const app = await NestFactory.create(AppModule, {/* httpsOptions*/ });
+  const configService = app.get(ConfigService);
+  const serverConfig = configService.get('config')?.server ?? {
+    port: 3100,
+    environment: 'development',
+    allowedOrigins: [],
+  };
+  const { port, environment, allowedOrigins } = serverConfig;
 
   //Configuración HTTPS
   /*const httpsOptions = ssl.enabled
@@ -23,7 +27,6 @@ async function bootstrap() {
     }
     : undefined;*/
 
-  const app = await NestFactory.create(AppModule, {/* httpsOptions*/ });
   // Seguridad con Helmet
   app.use(
     helmet({
@@ -32,7 +35,7 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
-  app.use(doubleCsrfProtection);
+  //app.use(doubleCsrfProtection);
 
   app.useGlobalPipes(
     new ValidationPipe({

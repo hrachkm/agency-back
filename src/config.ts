@@ -2,13 +2,16 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('config', () => {
   const environment = process.env.NODE_ENV || 'development';
-  const rawOrigins = process.env.ALLOWED_ORIGINS || '';
+  const rawOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim().replace(/^['"]|['"]$/g, '').replace(/\/$/, ''))
+    .filter(Boolean);
 
   return {
     server: {
-      port: parseInt(process.env.PORT) || 3100,
+      port: Number.parseInt(process.env.PORT ?? '3100', 10) || 3100,
       environment,
-      allowedOrigins: rawOrigins.split(',').map((origin) => origin.trim()),
+      allowedOrigins: [...new Set(rawOrigins)],
       /*ssl: {
 				enabled: process.env.SSL_ENABLED === 'true',
 				keyPath: process.env.SSL_KEY_PATH,
