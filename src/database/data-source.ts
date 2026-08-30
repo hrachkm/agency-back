@@ -3,7 +3,9 @@ import { join } from 'path';
 
 // Carga las variables de entorno directamente desde el archivo .env
 import 'dotenv/config';
-
+import { User } from '@/users/entities/user.entity';
+import { PropertyType } from '@/property-types/entities/property-types.entity';
+import { Property } from '@/properties/entities/properties.entity';
 
 const {
   DATABASE_TYPE,
@@ -18,7 +20,7 @@ const {
 } = process.env;
 
 export const AppDataSource = new DataSource({
-  type: (DATABASE_TYPE as 'postgres'),
+  type: DATABASE_TYPE as 'postgres',
   host: DATABASE_HOST,
   port: parseInt(DATABASE_PORT, 10),
   username: DATABASE_USER,
@@ -26,6 +28,6 @@ export const AppDataSource = new DataSource({
   database: DATABASE_DB_NAME,
   synchronize: false,
   logging: DATABASE_LOGGING === 'true',
-  entities: [join(process.cwd(), DATABASE_ENTITIES)],
+  entities: [User, PropertyType, Property],
   migrations: [join(process.cwd(), DATABASE_MIGRATIONS)],
 });
