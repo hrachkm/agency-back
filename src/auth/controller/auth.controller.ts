@@ -40,7 +40,7 @@ export class AuthController {
     description: 'Returns access and refresh tokens in cookies',
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  /*async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as User;
     const { accessToken, refreshToken } = this.authService.generateTokens(user);
 
@@ -58,7 +58,8 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     return { user };
-  }*/
+  }
+
   @Get('csrf-token')
   getCsrfToken(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const csrfToken = generateCsrfToken(req, res);
@@ -69,9 +70,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   @ApiResponse({ status: 200, description: 'Returns new access token' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  /*async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const token = req.cookies?.refresh_token;
-    const { accessToken, user } = await this.authService.verifyRefreshToken(token);
+    const { accessToken, user } =
+      await this.authService.verifyRefreshToken(token);
 
     res.cookie('access_token', accessToken, {
       httpOnly: true,
@@ -81,7 +86,7 @@ export class AuthController {
     });
 
     return user;
-  }*/
+  }
   @UseGuards(JwtAuthGuard)
   @Get('logout')
   @ApiOperation({ summary: 'Log out user and clear tokens' })

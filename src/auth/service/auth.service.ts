@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string) {
-    const user = await this.usersService.findOne(email);
+    const user = await this.usersService.findOneByUserEmail(email);
 
     if (!user) {
       return null;
@@ -43,22 +43,21 @@ export class AuthService {
   }
 
   generateTokens(user: User) {
-    /*const payloadAccess: PayloadAccessToken = {
-			role: user.role,
-			email: user.email,
-		};
+    const payloadAccess: PayloadAccessToken = {
+      ui: user.id,
+    };
 
-		const payloadRefresh: PayloadRefreshToken = {
-			ui: user.userId
-		};*/
-    /*const accessToken = this.jwtService.sign(payloadAccess);
+    const payloadRefresh: PayloadRefreshToken = {
+      email: user.email,
+    };
+    const accessToken = this.jwtService.sign(payloadAccess);
 
-		const refreshToken = this.jwtService.sign(payloadRefresh, {
-			secret: process.env.JWT_REFRESH_SECRET,
-			expiresIn: '7d',
-		});
+    const refreshToken = this.jwtService.sign(payloadRefresh, {
+      secret: process.env.JWT_REFRESH_SECRET,
+      expiresIn: '7d',
+    });
 
-		return { accessToken, refreshToken };*/
+    return { accessToken, refreshToken };
   }
 
   async verifyRefreshToken(token) {
@@ -71,16 +70,14 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token inválido o expirado');
     }
 
-    /*try {
+    try {
+      const user = await this.usersService.findOneByUserEmail(payload.email);
 
-			const user = await this.usersService.findOneByUserId(payload.ui);
-
-			const { accessToken } = this.generateTokens(user);
-			delete user.password
-			return { accessToken, user };
-			
-		} catch (err) {
-			throw new BadRequestException('Usuario no encontrado');
-		}*/
+      const { accessToken } = this.generateTokens(user);
+      delete user.password;
+      return { accessToken, user };
+    } catch (err) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
   }
 }
