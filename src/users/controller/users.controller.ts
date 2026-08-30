@@ -1,20 +1,25 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, UseGuards } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  UseGuards,
+  Query,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
 import { UsersService } from '@/users/services/users.service';
 import { CreateUserDto, RegisteredUserDto } from '@/users/dto/user.dto';
 
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { Public } from '@/shared/decorators/public.decorator';
+import { CurrentUser } from '@/shared/decorators/currentUser.decorator';
+import { PayloadAccessToken } from '@/auth/models/token.model';
 
 @ApiTags('Users') // Groups all endpoints under "Users"
-@ApiBearerAuth() // Indicates JWT is required
 @UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
@@ -23,17 +28,17 @@ export class UsersController {
   @Get()
   @ApiOperation({ summary: 'Retrieve all users' })
   @ApiResponse({ status: 200, description: 'List of all registered users' })
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query('limit') limit?: number, @Query('offset') offset?: number) {
+    return this.usersService.findAll(limit || 5, offset || 0);
   }
 
-  @Get(':email')
+  @Get(':id')
   @ApiOperation({ summary: 'Retrieve a user by email' })
   @ApiParam({ name: 'email', type: String, description: 'User email address' })
   @ApiResponse({ status: 200, description: 'User data matching the email' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  findOne(@Param('email') email: string) {
-    return this.usersService.findOne(email);
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.usersService.findOne(id);
   }
 
   @Post()
@@ -45,21 +50,22 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Patch(':id')
+  @Patch()
   @ApiOperation({ summary: 'Update an existing user by ID' })
-  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User successfully updated' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  update(@Param('id') id: string, @Body() updateUserDto: RegisteredUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  update(
+    @Body() updateUserDto: RegisteredUserDto,
+    @CurrentUser() currentUser: PayloadAccessToken,
+  ) {
+    return this.usersService.update(currentUser.ui, updateUserDto);
   }
 
-  @Delete(':id')
+  @Patch('remove')
   @ApiOperation({ summary: 'Delete a user by ID' })
-  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User successfully deleted' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  remove(@Param('id', ParseIntPipe) id: string) {
-    return this.usersService.remove(+id);
+  remove(@CurrentUser() currentUser: PayloadAccessToken) {
+    return this.usersService.remove(currentUser.ui);
   }
 }
