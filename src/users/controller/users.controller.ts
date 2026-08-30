@@ -8,6 +8,7 @@ import {
   UseGuards,
   Query,
   ParseUUIDPipe,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
@@ -61,7 +62,7 @@ export class UsersController {
     return this.usersService.update(currentUser.ui, updateUserDto);
   }
 
-  @Patch('remove')
+  @Delete('remove')
   @ApiOperation({ summary: 'Delete a user by ID' })
   @ApiResponse({ status: 200, description: 'User successfully deleted' })
   @ApiResponse({ status: 404, description: 'User not found' })
