@@ -1,4 +1,8 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+﻿import {
+  BadRequestException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Client } from 'pg';
@@ -17,8 +21,11 @@ export class UsersService {
     @InjectRepository(User) private userRepo: Repository<User>,
   ) {}
 
-  async findAll() {
-    const users = await this.userRepo.find({});
+  async findAll(limit: number, offset: number) {
+    const users = await this.userRepo.find({
+      take: limit,
+      skip: offset,
+    });
 
     if (!users || users.length === 0)
       throw new BadRequestException('No hay usuarios registrados');
@@ -26,7 +33,15 @@ export class UsersService {
     return users;
   }
 
-  async findOne(email: string) {
+  async findOne(id: string) {
+    const user = await this.userRepo.findOne({ where: { id } });
+
+    if (!user) throw new BadRequestException('Usuario no registrado');
+
+    return user;
+  }
+
+  async findOneByUserEmail(email: string) {
     const user = await this.userRepo.findOne({ where: { email } });
 
     if (!user) throw new BadRequestException('Usuario no registrado');
@@ -34,19 +49,13 @@ export class UsersService {
     return user;
   }
 
-  /*async findOneByUserId(userId: string) {
-    const user = await this.userRepo.findOne({ where: { userId } });
-
-    if (!user) throw new BadRequestException('Usuario no registrado');
-
-    return user;
-  }*/
-
   async create(newUser: CreateUserDto) {
     const { email } = newUser;
     const isRegistered = await this.userRepo.findOne({ where: { email } });
     if (!!isRegistered)
-      throw new BadRequestException('Este usuario ya está registrado');
+      throw new BadRequestException(
+        'Este usuario ya estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ registrado',
+      );
 
     const hashPassword = await bcrypt.hash(newUser.password, 17);
     newUser.password = hashPassword;
@@ -66,21 +75,23 @@ export class UsersService {
     };
   }
 
-  update(id: number, updateUserDto: RegisteredUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: RegisteredUserDto) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+
+    Object.assign(user, updateUserDto);
+    return await this.userRepo.save(user);
   }
 
-  async remove(id: number) {
-    const result = await this.userRepo.query(
-      `DELETE FROM "user" WHERE id = $1 RETURNING id, email, role, "createdAt", "updatedAt"`,
-      [id],
-    );
-
-    const deletedUser = result[0]?.[0];
-
-    if (!deletedUser) {
-      throw new BadRequestException(`No se encontró el usuario con id ${id}`);
+  async remove(id: string) {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) {
+      throw new BadRequestException(`No se encontro el usuario con id ${id}`);
     }
+
+    const deletedUser = await this.userRepo.softRemove(user);
 
     return {
       removed: true,
