@@ -4,29 +4,19 @@
 $ yarn install
 ```
 
-## Create Https and ssl certifications
+## Database
+
 ```bash
-#Create a folder named cert
-mkdir cert
-cd cert
+# run container
+$ docker compose up -d
 
-#Generate private key (in develop)
-openssl genrsa -out key.pem 2048
-
-#Generate autosigned certificate (in develop)
-openssl req -new -x509 -key key.pem -out cert.pem -days 365
-    #You can use this data as example
-    - Country Name: AR
-    - State or Province Name: Buenos Aires
-    - Locality Name: La Plata
-    - Organization Name: CodeForge Labs
-    - Organizational Unit Name: Backend Team
-    - Common Name: dev.codeforge.local
-    - Email Address: soporte@codeforge.com
+# credentials
+'See docker-compose.yml file and get the database credentials, use table plus instead of pgAdmin'
 
 ```
 
 ## Migrations
+
 ```bash
 # run migrations
 $ yarn migration:run
@@ -39,15 +29,17 @@ $ yarn migration:revert
 ```
 
 ## Go to API docs
+
 ```bash
 # url
-$ https://localhost:3100/api/docs
+$ http://localhost:3100/api/docs
 ```
 
 ## Create sample data
+
 ```bash
 # url
-$ https://localhost:3100/seed
+$ http://localhost:3100/seed
 ```
 
 ## Compile and run the project
@@ -61,17 +53,4 @@ $ yarn start:dev
 
 # production mode
 $ yarn start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ yarn test
-
-# e2e tests
-$ yarn test:e2e
-
-# test coverage
-$ yarn test:cov
 ```
