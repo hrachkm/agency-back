@@ -1,4 +1,4 @@
-﻿import {
+import {
   BadRequestException,
   Inject,
   Injectable,
@@ -22,7 +22,7 @@ export class UsersService {
   ) {}
 
   async findAll(limit: number, offset: number) {
-    const users = await this.userRepo.find({
+    const [users, total] = await this.userRepo.findAndCount({
       take: limit,
       skip: offset,
     });
@@ -30,7 +30,7 @@ export class UsersService {
     if (!users || users.length === 0)
       throw new BadRequestException('No hay usuarios registrados');
 
-    return users;
+    return { users, total };
   }
 
   async findOne(id: string) {
@@ -54,7 +54,7 @@ export class UsersService {
     const isRegistered = await this.userRepo.findOne({ where: { email } });
     if (!!isRegistered)
       throw new BadRequestException(
-        'Este usuario ya estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ registrado',
+        'Este usuario ya estÃƒÆ’Ã‚Â¡ registrado',
       );
 
     const hashPassword = await bcrypt.hash(newUser.password, 17);
@@ -111,3 +111,4 @@ export class UsersService {
     }
   }
 }
+

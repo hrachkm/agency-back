@@ -64,8 +64,6 @@ export class PropertiesService {
       relations: ['seller', 'propertyType'],
     });
 
-    console.log(property);
-
     if (!property) {
       throw new NotFoundException('Inmueble no encontrado');
     }
