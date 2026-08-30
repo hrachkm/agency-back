@@ -12,6 +12,8 @@ import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedModule } from './seed/seed.module';
+import { PropertyTypesModule } from './property-types/property-types.module';
+import { PropertiesModule } from './properties/properties.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { SeedModule } from './seed/seed.module';
     UsersModule,
     AuthModule,
     SeedModule,
+    PropertyTypesModule,
+    PropertiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
