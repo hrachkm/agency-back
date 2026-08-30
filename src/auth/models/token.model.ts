@@ -1,8 +1,7 @@
 export interface PayloadAccessToken {
-    role: string,
-    email: string
+  ui: string;
 }
 
 export interface PayloadRefreshToken {
-    ui: string
+  email: string;
 }
