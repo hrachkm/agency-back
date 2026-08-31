@@ -8,6 +8,7 @@
   Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { UserRole } from '../enums/users-role.entity';
 
 @Entity('users')
 @Index(['email'])
@@ -27,6 +28,9 @@ export class User {
 
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
+
+  @Column({ type: 'enum', enum: UserRole })
+  role: UserRole;
 
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

@@ -54,7 +54,7 @@ export class UsersService {
     const isRegistered = await this.userRepo.findOne({ where: { email } });
     if (!!isRegistered)
       throw new BadRequestException(
-        'Este usuario ya estÃƒÆ’Ã‚Â¡ registrado',
+        'Este usuario ya esta registrado',
       );
 
     const hashPassword = await bcrypt.hash(newUser.password, 17);

@@ -8,7 +8,9 @@ import {
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
+  IsEnum,
 } from 'class-validator';
+import { UserRole } from '../enums/users-role.entity';
 
 export function Match(property: string, validationOptions?: ValidationOptions) {
   return function (object: Object, propertyName: string) {
@@ -64,6 +66,17 @@ export class CreateUserDto {
       'El password debe contener al menos una may�scula, una min�scula, un n�mero y un car�cter especial',
   })
   password: string;
+
+  @ApiProperty({
+    example: 'admin',
+    description: 'Valid user role, either "admin" or "user"',
+  })
+  @IsEnum(UserRole, {
+    message: () =>
+      `El role del usuario debe ser user o admin`,
+  })
+  @IsNotEmpty()
+  role: UserRole;
 
   @ApiProperty({
     example: 'Pwd@123',
