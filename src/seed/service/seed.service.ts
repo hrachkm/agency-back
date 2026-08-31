@@ -9,6 +9,7 @@ import { CreatePropertyDto } from '@/properties/dto/properties.dto';
 
 import { PropertyTypesService } from '@/property-types/services/property-types.service';
 import { CreatePropertyTypeDto } from '@/property-types/dto/property-types.dto';
+import { UserRole } from '@/users/enums/users-role.entity';
 
 @Injectable()
 export class SeedService {
@@ -50,60 +51,70 @@ export class SeedService {
         email: 'admin@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.ADMIN
       },
       {
         name: 'User 1',
         email: 'user1@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
       {
         name: 'User 2',
         email: 'user2@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
       {
         name: 'User 3',
         email: 'user3@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
       {
         name: 'Doctor',
         email: 'doctor@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
       {
         name: 'Patient',
         email: 'patient@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
       {
         name: 'Employee',
         email: 'employee@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
       {
         name: 'Client',
         email: 'client@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
       {
         name: 'User 4',
         email: 'user4@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
       {
         name: 'User 5',
         email: 'user5@example.com',
         password: 'Pwd@1234',
         confirmPassword: 'Pwd@1234',
+        role: UserRole.USER
       },
     ];
 
