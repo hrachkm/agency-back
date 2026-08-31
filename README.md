@@ -15,6 +15,9 @@ $ docker compose up -d
 
 ```
 
+## Environments variables
+- duplicar el archivo .env.example y cambiar el nombre a .env, luego agregar los datos que le fueron enviados por separado
+
 ## Migrations
 
 ```bash
