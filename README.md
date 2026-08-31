@@ -39,7 +39,9 @@ $ http://localhost:3100/api/docs
 
 ```bash
 # url
-$ http://localhost:3100/seed
+$ http://localhost:3100/seed 
+o
+$ yarn seed
 ```
 
 ## Compile and run the project
