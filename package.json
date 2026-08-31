@@ -21,7 +21,8 @@
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js --dataSource ./src/database/data-source.ts",
     "migration:generate": "yarn typeorm migration:generate",
     "migration:run": "yarn typeorm migration:run",
-    "migration:revert": "yarn typeorm migration:revert"
+    "migration:revert": "yarn typeorm migration:revert",
+    "seed": "node -r ts-node/register -r tsconfig-paths/register -e \"const { NestFactory } = require('@nestjs/core'); const { AppModule } = require('./src/app.module'); const { SeedService } = require('./src/seed/service/seed.service'); (async () => { const app = await NestFactory.createApplicationContext(AppModule); const seedService = app.get(SeedService); const result = await seedService.generateData(); console.log(result); await app.close(); })().catch((error) => { console.error(error); process.exit(1); });\""
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
