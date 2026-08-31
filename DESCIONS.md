@@ -1,3 +1,15 @@
+# Arquitectura
+- Se utilizo la arquitectura tipo monolito y la programacion modular para separar las responsabilidades donde:
+    - Los controladores se encargan de implementar los endpoint para comunicarse con una aplicacion externa
+    - Los guardianes se encargan de validar la estrategia de token, validar que un usuario no inicie sesion varias veces seguidas y restringir el acceso a los endpoints.
+    - Decoradores personalizados que se usan para extraer la informacion del token de acceso e indicar al guardian si la ruta es publica.
+    - Se implementaron DTO para definir el modelo de datos que debe recibirse para su procesamiento, de lo contrario devolveran excepciones 404 indicando los errores cometidos.
+    - Los servicios se encargan de hacer validaciones de seguridad para evitar la insercion innecesaria o la modificacion de datos no autorizada
+- Se utilizo type orm para manipular la base de datos de postgres ya que es compatible con la sintaxis de typescript y ofrece metodos eficaces para realizar muchas consultas de utilidad.
+
+# Importante
+- Se implemento CORS estricto, por lo tanto es importante que se indique el origen de los datos para que este sea autorizado.
+
 # Validacion de reglas de estado
 
 Algunas se colocaron a nivel de servicio como por ejemplo que un usuario no pueda manipular un registro que no es suyo, tambien un conflicto con el cambio de estado o validar la existencia del registro ya que es lo mas ideal al tener comunicacion directa con la base de datos, esto es eficaz ya que facilita la deteccion y correccion de errores.
