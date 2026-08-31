@@ -50,8 +50,8 @@ async function bootstrap() {
   if ((environment === 'development') || (environment === 'staging')) {
     app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
     const configSwagger = new DocumentBuilder()
-      .setTitle('API Login Boilerplate')
-      .setDescription('Documentación de la API para autenticación y gestión de usuarios')
+      .setTitle('API Agencia inmuebles')
+      .setDescription('Documentación de la API para autenticación y gestión de usuarios e inmuebles')
       .setVersion('1.0')
       .build();
   
